@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SignTermo – an accessible Wordle-style word game played with sign language hand gestures via webcam." />
+    <meta name="theme-color" content="#0f0f1a" />
+    <title>SignTermo – Sign Language Word Game</title>
+    <!-- Preconnect to Google Fonts for Syne + JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <!-- Skip-to-content for keyboard/screen-reader users -->
+    <style>
+      .skip-link {
+        position: absolute;
+        top: -9999px;
+        left: 0;
+        background: #f7c948;
+        color: #0f0f1a;
+        padding: 8px 16px;
+        font-weight: 700;
+        font-size: 1rem;
+        z-index: 9999;
+        border-radius: 0 0 8px 0;
+        text-decoration: none;
+      }
+      .skip-link:focus {
+        top: 0;
+      }
+      /* Prevent flash of unstyled content */
+      body { background: #0f0f1a; margin: 0; }
+    </style>
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="root"></div>
+    <!-- Live region for screen-reader announcements -->
+    <div
+      id="sr-live"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;"
+    ></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
