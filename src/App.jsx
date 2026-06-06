@@ -173,7 +173,7 @@ export default function App() {
 
       <footer className="app-footer" role="contentinfo">
         <p>
-          Tremo — An accessible sign language word game.{' '}
+          TREMU NA OFICINA — An accessible sign language word game.{' '}
           <span aria-hidden="true">🤟</span>
         </p>
       </footer>

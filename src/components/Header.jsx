@@ -22,11 +22,10 @@ export function Header({ highContrast, toggleHighContrast, onNewGame, gameState 
     <header className="app-header" role="banner">
       <div className="header-inner">
         <div className="header-brand">
-          <h1 className="app-title" aria-label="Tremo — Sign Language Word Game">
+          <h1 className="app-title" aria-label="TREMU NA OFICINA — Sign Language Word Game">
             <span className="title-sign" aria-hidden="true">🤟</span>
-            Sign<span className="title-accent">Tremo</span>
+            <span className="title-accent">TREMU NA OFICINA</span>
           </h1>
-          <p className="app-subtitle">Sign Language Wordle</p>
         </div>
 
         <nav className="header-controls" aria-label="Game controls">
