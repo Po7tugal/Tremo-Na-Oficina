@@ -1,0 +1,349 @@
+/* ============================================================
+   global.css — Design System & Layout
+   ============================================================
+   Design direction: Bold typographic brutalism meets accessibility.
+   Dark background, high-contrast tiles, strong grid structure.
+   Fonts: Syne (display) + Space Mono (monospace game tiles)
+   ============================================================ */
+
+/* ── CSS Custom Properties (Design Tokens) ────────────────── */
+:root {
+  /* Colors — Normal mode */
+  --color-bg: #0f0f13;
+  --color-surface: #1a1a22;
+  --color-surface-2: #24242f;
+  --color-border: #333340;
+  --color-text: #f0f0f5;
+  --color-text-muted: #8888a0;
+  --color-accent: #7c6af7;
+  --color-accent-hover: #9b8dff;
+
+  /* Tile colors */
+  --color-correct: #538d4e;     /* Green */
+  --color-present: #b59f3b;     /* Yellow */
+  --color-absent: #3a3a48;      /* Dark gray */
+  --color-tile-border: #555568;
+  --color-tile-text: #ffffff;
+
+  /* Keyboard key colors */
+  --color-key-bg: #818198;
+  --color-key-text: #ffffff;
+
+  /* Feedback / status */
+  --color-success: #4caf50;
+  --color-danger: #e53935;
+  --color-warning: #ffc107;
+
+  /* Spacing scale */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-12: 48px;
+
+  /* Tile dimensions */
+  --tile-size: 62px;
+  --tile-gap: 6px;
+  --tile-font: 'Space Mono', monospace;
+  --tile-font-size: 2rem;
+
+  /* Typography */
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+
+  /* Borders & Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+
+  /* Transitions */
+  --transition: 200ms ease;
+  --transition-slow: 400ms ease;
+}
+
+/* ── High Contrast Mode ───────────────────────────────────── */
+[data-contrast="high"],
+.app--high-contrast {
+  --color-bg: #000000;
+  --color-surface: #111111;
+  --color-surface-2: #1a1a1a;
+  --color-border: #ffffff;
+  --color-text: #ffffff;
+  --color-text-muted: #cccccc;
+  --color-accent: #ffff00;
+  --color-accent-hover: #ffff66;
+  --color-correct: #00cc00;
+  --color-present: #ffcc00;
+  --color-absent: #555555;
+  --color-tile-border: #ffffff;
+  --color-tile-text: #ffffff;
+  --color-key-bg: #333333;
+  --color-key-text: #ffffff;
+}
+
+/* ── Reset ────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-display);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Accessibility: Skip Link ─────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--sp-4);
+  background: var(--color-accent);
+  color: #fff;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  z-index: 9999;
+  text-decoration: none;
+  transition: top var(--transition);
+}
+.skip-link:focus {
+  top: var(--sp-4);
+}
+
+/* ── Focus Styles ─────────────────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── App Layout ───────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  padding: var(--sp-4);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Three-column grid layout */
+.layout-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr 300px;
+  grid-template-rows: auto;
+  gap: var(--sp-6);
+  align-items: start;
+}
+
+.col-webcam   { grid-column: 1; }
+.col-board    { grid-column: 2; }
+.col-reference { grid-column: 3; }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .layout-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+  .col-webcam    { grid-column: 1; grid-row: 1; }
+  .col-board     { grid-column: 2; grid-row: 1; }
+  .col-reference { grid-column: 1 / -1; grid-row: 2; }
+}
+
+@media (max-width: 700px) {
+  .layout-grid {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+  }
+  .col-webcam, .col-board, .col-reference {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* ── Section Titles ───────────────────────────────────────── */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--sp-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.section-icon {
+  font-size: 1.2em;
+}
+
+/* ── Buttons ──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), opacity var(--transition);
+  text-decoration: none;
+  min-height: 44px; /* Accessibility: minimum touch target */
+  white-space: nowrap;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-hover); }
+
+.btn-secondary {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--color-border); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+.btn-ghost:hover:not(:disabled) { color: var(--color-text); border-color: var(--color-text-muted); }
+.btn-ghost.active { color: var(--color-accent); border-color: var(--color-accent); }
+
+.btn-success {
+  background: var(--color-correct);
+  color: #fff;
+}
+.btn-success:hover:not(:disabled) { filter: brightness(1.15); }
+
+.btn-danger {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+.btn-danger:hover:not(:disabled) { background: var(--color-absent); }
+
+/* ── Game Over Banner ─────────────────────────────────────── */
+.game-over-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: var(--sp-4) var(--sp-6);
+  margin-bottom: var(--sp-6);
+  border-radius: var(--radius-lg);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: center;
+}
+.game-over-banner--won {
+  background: rgba(83, 141, 78, 0.2);
+  border: 2px solid var(--color-correct);
+  color: var(--color-correct);
+}
+.game-over-banner--lost {
+  background: rgba(229, 57, 53, 0.15);
+  border: 2px solid var(--color-danger);
+  color: var(--color-danger);
+}
+.game-over-icon {
+  font-size: 1.5em;
+}
+
+/* ── Toast Message ────────────────────────────────────────── */
+.message-toast {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text);
+  color: var(--color-bg);
+  padding: var(--sp-2) var(--sp-5);
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition), top var(--transition);
+  z-index: 100;
+}
+.message-toast--visible {
+  opacity: 1;
+  top: -42px;
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.app-footer {
+  text-align: center;
+  padding: var(--sp-4);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--sp-8);
+}
+
+/* ── Error Banner ─────────────────────────────────────────── */
+.error-banner {
+  background: rgba(229, 57, 53, 0.15);
+  border: 1px solid var(--color-danger);
+  color: #ff6b6b;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  margin: var(--sp-3) 0;
+}
+
+/* ── Keyboard guide ───────────────────────────────────────── */
+kbd {
+  display: inline-block;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+/* ── Print / Reduced Motion ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

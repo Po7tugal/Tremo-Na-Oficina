@@ -1,0 +1,83 @@
+/* ============================================================
+   header.css — App Header Styles
+   ============================================================ */
+
+.app-header {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--sp-6);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) 0;
+  gap: var(--sp-4);
+}
+
+/* ── Brand ────────────────────────────────────────────────── */
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.app-title {
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.title-sign {
+  font-size: 1.4rem;
+}
+.title-accent {
+  color: var(--color-accent);
+}
+.app-subtitle {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 400;
+}
+
+/* ── Controls ─────────────────────────────────────────────── */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.icon-btn {
+  padding: var(--sp-2) var(--sp-3);
+}
+.btn-label {
+  font-size: 0.8rem;
+}
+
+/* ── Keyboard Guide ───────────────────────────────────────── */
+.keyboard-guide {
+  text-align: center;
+  padding: var(--sp-2) 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .app-title { font-size: 1.4rem; }
+  .header-inner { padding: var(--sp-3) 0; }
+  .keyboard-guide { display: none; }
+  .btn-label { display: none; }
+}
