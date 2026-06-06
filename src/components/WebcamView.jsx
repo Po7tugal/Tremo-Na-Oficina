@@ -1,21 +1,6 @@
-/**
- * WebcamView.jsx — Webcam Display & Gesture Detection UI
- * --------------------------------------------------------
- * Renders the live camera feed, detection overlay, hold progress,
- * and controls to start/stop the camera.
- *
- * Dependencies: React, useWebcam hook
- * Used by: App.jsx
- */
-
 import React from 'react';
 import { useWebcam } from '../hooks/useWebcam.js';
 
-/**
- * @param {Object} props
- * @param {Function} props.onLetter - Called with confirmed letter string
- * @param {boolean} props.disabled - Disable input (game over)
- */
 export function WebcamView({ onLetter, disabled }) {
   const {
     videoRef,
@@ -31,54 +16,43 @@ export function WebcamView({ onLetter, disabled }) {
   const isRequesting = cameraState === 'requesting';
 
   return (
-    <section
-      className="webcam-section"
-      aria-label="Webcam and gesture recognition area"
-    >
+    <section className="webcam-section" aria-label="Câmara e reconhecimento de gestos">
       <h2 className="section-title">
         <span className="section-icon" aria-hidden="true">📷</span>
-        Camera View
+        Câmara
       </h2>
 
-      {/* Video container */}
-      <div className="video-wrapper" role="img" aria-label="Live webcam feed">
+      {/* Vídeo */}
+      <div className="video-wrapper" role="img" aria-label="Imagem da câmara">
         <video
           ref={videoRef}
           className="video-feed"
           autoPlay
           playsInline
           muted
-          aria-label="Webcam video feed"
         />
 
-        {/* Overlay when camera is not active */}
         {!isActive && (
           <div className="video-placeholder" aria-hidden="true">
             <div className="placeholder-icon">🖐</div>
             <p className="placeholder-text">
-              {isRequesting ? 'Requesting camera...' : 'Camera off'}
+              {isRequesting ? 'A ligar câmara...' : 'Câmara desligada'}
             </p>
           </div>
         )}
 
-        {/* Detection overlay — shows current letter being held */}
+        {/* Overlay de deteção */}
         {isActive && detection.letter && (
-          <div
-            className="detection-overlay"
-            aria-live="polite"
-            aria-label={`Detecting letter ${detection.letter}, confidence ${Math.round(detection.confidence * 100)} percent`}
-          >
+          <div className="detection-overlay" aria-live="polite">
             <div className="detected-letter" aria-hidden="true">
               {detection.letter}
             </div>
-            {/* Hold progress bar */}
             <div
               className="hold-progress-bar"
               role="progressbar"
               aria-valuenow={Math.round(detection.holdProgress * 100)}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Hold progress"
             >
               <div
                 className="hold-progress-fill"
@@ -86,59 +60,68 @@ export function WebcamView({ onLetter, disabled }) {
               />
             </div>
             <div className="confidence-label" aria-hidden="true">
-              {Math.round(detection.confidence * 100)}% confidence
+              {Math.round(detection.confidence * 100)}% confiança
             </div>
           </div>
         )}
       </div>
 
-      {/* Error message */}
       {errorMessage && (
-        <div className="error-banner" role="alert" aria-live="assertive">
+        <div className="error-banner" role="alert">
           ⚠️ {errorMessage}
         </div>
       )}
 
-      {/* Camera controls */}
+      {/* Controlos da câmara */}
       <div className="camera-controls">
         {!isActive ? (
           <button
             className="btn btn-primary"
             onClick={startCamera}
             disabled={isRequesting || disabled}
-            aria-label="Start webcam for sign language detection"
           >
-            {isRequesting ? '⏳ Starting...' : '▶ Start Camera'}
+            {isRequesting ? '⏳ A ligar...' : '▶ Ligar Câmara'}
           </button>
         ) : (
-          <button
-            className="btn btn-secondary"
-            onClick={stopCamera}
-            aria-label="Stop webcam"
-          >
-            ⏹ Stop Camera
+          <button className="btn btn-secondary" onClick={stopCamera}>
+            ⏹ Desligar Câmara
           </button>
         )}
       </div>
 
-      {/* Mock/simulation notice */}
-      <div className="mock-notice" role="note">
-        <strong>Demo Mode:</strong> Letters appear automatically to simulate
-        gesture detection. In production, connect a trained ML model to the
-        gesture recognition engine.
-      </div>
-
-      {/* Manual letter input for keyboard users / testing */}
+      {/* Botões de gesto especial */}
       {!disabled && (
-        <div className="manual-input-section" aria-label="Manual letter input for testing">
-          <p className="manual-input-label">Or type a letter manually:</p>
-          <div className="mini-keyboard" role="group" aria-label="Letter buttons">
+        <div className="gesture-actions" aria-label="Ações por gesto">
+          <button
+            className="btn btn-gesture btn-enter"
+            onClick={() => simulateLetter('ENTER')}
+            aria-label="Confirmar palavra (mão aberta)"
+            title="Gesto: mão aberta"
+          >
+            ✋ Confirmar
+          </button>
+          <button
+            className="btn btn-gesture btn-delete"
+            onClick={() => simulateLetter('BACKSPACE')}
+            aria-label="Apagar letra (polegar para baixo)"
+            title="Gesto: polegar para baixo"
+          >
+            👎 Apagar
+          </button>
+        </div>
+      )}
+
+      {/* Teclado de teste */}
+      {!disabled && (
+        <div className="manual-input-section" aria-label="Letras para teste">
+          <p className="manual-input-label">Teste manual:</p>
+          <div className="mini-keyboard" role="group">
             {'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(letter => (
               <button
                 key={letter}
                 className="mini-key"
                 onClick={() => simulateLetter(letter)}
-                aria-label={`Insert letter ${letter}`}
+                aria-label={`Letra ${letter}`}
                 disabled={disabled}
               >
                 {letter}
@@ -147,6 +130,11 @@ export function WebcamView({ onLetter, disabled }) {
           </div>
         </div>
       )}
+
+      <div className="mock-notice" role="note">
+        <strong>Modo Demo:</strong> Letras simuladas automaticamente.{' '}
+        Usa os botões <em>Confirmar</em> e <em>Apagar</em> para testar os gestos especiais.
+      </div>
     </section>
   );
 }
