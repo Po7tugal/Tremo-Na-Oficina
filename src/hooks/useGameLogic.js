@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
     evaluateGuess,
     buildKeyboardMap,
@@ -30,7 +30,15 @@ export function useGameLogic() {
     const [isShaking, setIsShaking] = useState(false);
     const [evaluatedRows, setEvaluatedRows] = useState([]);
 
+    // 🔧 Use ref to track current guess without closure issues
+    const currentGuessRef = useRef('');
+    const currentRowRef = useRef(0);
+
+    console.log('🎮 Game initialized. Secret word:', secretWord);
+    console.log(`📍 Current Row: ${currentRow}, Game State: ${gameState}`);
+
     const showMessage = useCallback((text, duration = 2500) => {
+        console.log('📢 Message:', text);
         setMessage(text);
         setTimeout(() => setMessage(null), duration);
     }, []);
@@ -40,39 +48,56 @@ export function useGameLogic() {
         setTimeout(() => setIsShaking(false), 600);
     }, []);
 
-    // ✅ CORRIGIDO: usa forma funcional para não congelar o closure
     const addLetter = useCallback((letter) => {
-        if (gameState !== GAME_STATE.PLAYING) return;
+        if (gameState !== GAME_STATE.PLAYING) {
+            console.log('⚠️ Game not in PLAYING state');
+            return;
+        }
 
-        setCurrentGuess(prev => {
-            if (prev.length >= WORD_LENGTH) return prev;
-            const newGuess = prev + letter;
+        if (currentGuessRef.current.length >= WORD_LENGTH) {
+            console.log('⚠️ Word is already full (5 letters)');
+            return;
+        }
 
-            setBoard(board => {
-                const updated = board.map(row => row.map(tile => ({ ...tile })));
-                updated[currentRow][newGuess.length - 1] = {
-                    letter,
-                    status: TILE_STATUS.PENDING,
-                };
-                return updated;
-            });
+        const newGuess = currentGuessRef.current + letter;
+        currentGuessRef.current = newGuess;
+        console.log(`✍️ Letter added: "${letter}" → Current guess: "${newGuess}"`);
 
-            announceLetterDetected(letter);
-            return newGuess;
+        setCurrentGuess(newGuess);
+
+        setBoard(board => {
+            const updated = board.map(row => row.map(tile => ({ ...tile })));
+            updated[currentRowRef.current][newGuess.length - 1] = {
+                letter,
+                status: TILE_STATUS.PENDING,
+            };
+            return updated;
         });
-    }, [gameState, currentRow]); // ← sem currentGuess aqui
+
+        announceLetterDetected(letter);
+    }, [gameState]);
 
     const deleteLetter = useCallback(() => {
-        if (gameState !== GAME_STATE.PLAYING) return;
-        if (currentGuess.length === 0) return;
+        if (gameState !== GAME_STATE.PLAYING) {
+            console.log('⚠️ Game not in PLAYING state');
+            return;
+        }
 
-        const removed = currentGuess[currentGuess.length - 1];
-        const newGuess = currentGuess.slice(0, -1);
+        if (currentGuessRef.current.length === 0) {
+            console.log('⚠️ No letters to delete');
+            return;
+        }
+
+        const removed = currentGuessRef.current[currentGuessRef.current.length - 1];
+        const newGuess = currentGuessRef.current.slice(0, -1);
+        currentGuessRef.current = newGuess;
+
+        console.log(`🗑️ Letter deleted: "${removed}" → Current guess: "${newGuess}"`);
         setCurrentGuess(newGuess);
 
         setBoard(prev => {
             const updated = prev.map(row => row.map(tile => ({ ...tile })));
-            updated[currentRow][newGuess.length] = {
+            updated[currentRowRef.current][newGuess.length] = {
                 letter: '',
                 status: TILE_STATUS.EMPTY,
             };
@@ -80,31 +105,69 @@ export function useGameLogic() {
         });
 
         announceDelete(removed);
-    }, [gameState, currentGuess, currentRow]);
+    }, [gameState]);
 
     const submitGuess = useCallback(() => {
-        if (gameState !== GAME_STATE.PLAYING) return;
+        // ✅ Use ref.current for accurate guess length
+        const guessToSubmit = currentGuessRef.current.trim().toUpperCase();
 
-        if (currentGuess.length < WORD_LENGTH) {
+        console.log('🚀 submitGuess called');
+        console.log('Current state:', {
+            gameState,
+            currentGuess: guessToSubmit,
+            currentGuessLength: guessToSubmit.length,
+            currentRow: currentRowRef.current,
+            secretWord,
+        });
+
+        // ✅ Check 1: Game state
+        if (gameState !== GAME_STATE.PLAYING) {
+            console.log('❌ Game not in PLAYING state. Current state:', gameState);
+            showMessage('Game is not active');
+            return;
+        }
+
+        // ✅ Check 2: Word length
+        if (guessToSubmit.length < WORD_LENGTH) {
+            console.log(`❌ Word incomplete: "${guessToSubmit}" has ${guessToSubmit.length} letters, needs ${WORD_LENGTH}`);
             showMessage('Not enough letters');
             announceIncompleteWord();
             triggerShake();
             return;
         }
 
-        if (!isValidWord(currentGuess)) {
+        if (guessToSubmit.length > WORD_LENGTH) {
+            console.log(`❌ Word too long: "${guessToSubmit}" has ${guessToSubmit.length} letters, needs ${WORD_LENGTH}`);
+            showMessage('Too many letters');
+            triggerShake();
+            return;
+        }
+
+        // ✅ Check 3: Valid word
+        console.log(`🔍 Validating word: "${guessToSubmit}"`);
+        const isValid = isValidWord(guessToSubmit);
+        console.log(`✓ Validation result: ${isValid ? '✅ VALID' : '❌ INVALID'}`);
+
+        if (!isValid) {
+            console.log(`❌ Word not in dictionary: "${guessToSubmit}"`);
             showMessage('Not in word list');
             announceInvalidWord();
             triggerShake();
             return;
         }
 
-        const result = evaluateGuess(currentGuess, secretWord);
+        // ✅ All checks passed - evaluate guess
+        console.log(`✅ All checks passed! Evaluating guess: "${guessToSubmit}" vs "${secretWord}"`);
+
+        const result = evaluateGuess(guessToSubmit, secretWord);
         const newEvaluatedRows = [...evaluatedRows, result];
 
+        console.log('Evaluation result:', result);
+
+        // ✅ Update board with evaluated row
         setBoard(prev => {
             const updated = prev.map(row => row.map(tile => ({ ...tile })));
-            updated[currentRow] = result;
+            updated[currentRowRef.current] = result;
             return updated;
         });
 
@@ -112,28 +175,52 @@ export function useGameLogic() {
         setKeyboardMap(buildKeyboardMap(newEvaluatedRows));
         announceRowResult(result);
 
+        // ✅ Check if won
         const won = result.every(t => t.status === TILE_STATUS.CORRECT);
-        const nextRow = currentRow + 1;
 
         if (won) {
+            console.log('🎉 GAME WON!');
             setGameState(GAME_STATE.WON);
             const messages = ['Genius!', 'Magnificent!', 'Impressive!', 'Splendid!', 'Great!', 'Phew!'];
-            showMessage(messages[currentRow] ?? 'You got it!', 4000);
-            setTimeout(() => announceWin(nextRow), 1000);
-        } else if (nextRow >= MAX_ATTEMPTS) {
-            setGameState(GAME_STATE.LOST);
-            showMessage(secretWord, 6000);
-            setTimeout(() => announceLoss(secretWord), 800);
+            showMessage(messages[currentRowRef.current] ?? 'You got it!', 4000);
+            setTimeout(() => announceWin(currentRowRef.current + 1), 1000);
+        } else {
+            // ✅ Not won, check if can continue
+            const nextRow = currentRowRef.current + 1;
+
+            if (nextRow >= MAX_ATTEMPTS) {
+                // ✅ Lost on last attempt
+                console.log('💀 GAME LOST! Word was:', secretWord);
+                setGameState(GAME_STATE.LOST);
+                showMessage(`Game Over! Word was: ${secretWord}`, 6000);
+                setTimeout(() => announceLoss(secretWord), 800);
+            } else {
+                // ✅ Continue to next row
+                console.log(`➡️ Moving to next row: ${nextRow}`);
+                currentRowRef.current = nextRow;
+                setCurrentRow(nextRow);
+            }
         }
 
-        setCurrentRow(nextRow);
+        // ✅ Reset guess
         setCurrentGuess('');
-    }, [gameState, currentGuess, secretWord, currentRow, evaluatedRows, showMessage, triggerShake]);
+        currentGuessRef.current = '';
+    }, [gameState, secretWord, evaluatedRows, showMessage, triggerShake]);
+
+    // ✅ Sync refs with state
+    useEffect(() => {
+        currentRowRef.current = currentRow;
+    }, [currentRow]);
 
     const resetGame = useCallback(() => {
-        setSecretWord(getRandomWord());
+        console.log('🔄 Game reset');
+        const newWord = getRandomWord();
+        console.log('New secret word:', newWord);
+        setSecretWord(newWord);
         setBoard(createEmptyBoard());
         setCurrentGuess('');
+        currentGuessRef.current = '';
+        currentRowRef.current = 0;
         setCurrentRow(0);
         setGameState(GAME_STATE.PLAYING);
         setKeyboardMap({});

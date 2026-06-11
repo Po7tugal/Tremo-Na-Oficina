@@ -1,15 +1,15 @@
 /**
- * GameBoard.jsx — Word Guessing Grid
- * ------------------------------------
- * Renders the 6x5 tile grid with color-coded feedback.
- * Handles animations, accessibility labels, and message display.
+ * GameBoard.jsx — Word Guessing Grid with Animations
+ * ---------------------------------------------------
+ * Renders the 6x5 tile grid with color-coded feedback and animations.
+ * Handles animations for win/loss states.
  *
  * Dependencies: React, gameLogic constants
  * Used by: App.jsx
  */
 
 import React from 'react';
-import { TILE_STATUS, MAX_ATTEMPTS, WORD_LENGTH } from '../utils/gameLogic.js';
+import { TILE_STATUS, MAX_ATTEMPTS, WORD_LENGTH, GAME_STATE } from '../utils/gameLogic.js';
 
 /**
  * Single tile in the grid.
@@ -42,13 +42,18 @@ function Tile({ letter, status, isCurrentRow, colIndex, isShaking }) {
 /**
  * One row of 5 tiles.
  */
-function TileRow({ tiles, rowIndex, currentRow, isShaking }) {
+function TileRow({ tiles, rowIndex, currentRow, isShaking, gameState }) {
   const isCurrentRow = rowIndex === currentRow;
+  const isLastRow = rowIndex === MAX_ATTEMPTS - 1;
+  const isLost = gameState === GAME_STATE.LOST && isLastRow;
+
   return (
     <div
-      className={`tile-row ${isCurrentRow ? 'tile-row--active' : ''}`}
+      className={`tile-row ${isCurrentRow ? 'tile-row--active' : ''} ${isLost ? 'tile-row--lost' : ''}`}
       role="row"
       aria-label={`Attempt ${rowIndex + 1}`}
+      data-is-current={isCurrentRow}
+      data-is-lost={isLost}
     >
       {tiles.map((tile, colIndex) => (
         <Tile
@@ -68,22 +73,36 @@ function TileRow({ tiles, rowIndex, currentRow, isShaking }) {
  * @param {Object} props
  * @param {Array} props.board - 6x5 board state
  * @param {number} props.currentRow - Active row index
+ * @param {string} props.gameState - Current game state (playing/won/lost)
  * @param {string|null} props.message - Toast message
  * @param {boolean} props.isShaking - Shake animation trigger
  * @param {Function} props.onSubmit - Submit current guess
  * @param {Function} props.onDelete - Delete last letter
  */
-export function GameBoard({ board, currentRow, message, isShaking, onSubmit, onDelete }) {
+export function GameBoard({
+  board,
+  currentRow,
+  gameState,
+  message,
+  isShaking,
+  onSubmit,
+  onDelete,
+}) {
+  const isGameOver = gameState === GAME_STATE.WON || gameState === GAME_STATE.LOST;
+  const isWon = gameState === GAME_STATE.WON;
+  const isLost = gameState === GAME_STATE.LOST;
+
   return (
     <section className="board-section" aria-label="Word guessing board">
       <h2 className="section-title">
         <span className="section-icon" aria-hidden="true">🟩</span>
-        Guess the Word
+        Adivinhe a Palavra
       </h2>
 
-      {/* Toast message */}
+      {/* Toast message with game state styling */}
       <div
         className={`message-toast ${message ? 'message-toast--visible' : ''}`}
+        data-type={isWon ? 'win' : isLost ? 'loss' : 'info'}
         role="alert"
         aria-live="assertive"
         aria-atomic="true"
@@ -91,13 +110,14 @@ export function GameBoard({ board, currentRow, message, isShaking, onSubmit, onD
         {message}
       </div>
 
-      {/* The 6x5 grid */}
+      {/* The 6x5 grid with game state */}
       <div
         className="board-grid"
         role="grid"
         aria-label="Word guessing grid, 6 rows of 5 letters"
         aria-rowcount={MAX_ATTEMPTS}
         aria-colcount={WORD_LENGTH}
+        data-game-state={gameState}
       >
         {board.map((row, rowIndex) => (
           <TileRow
@@ -106,6 +126,7 @@ export function GameBoard({ board, currentRow, message, isShaking, onSubmit, onD
             rowIndex={rowIndex}
             currentRow={currentRow}
             isShaking={isShaking}
+            gameState={gameState}
           />
         ))}
       </div>
@@ -116,6 +137,7 @@ export function GameBoard({ board, currentRow, message, isShaking, onSubmit, onD
           className="btn btn-danger"
           onClick={onDelete}
           aria-label="Delete last letter"
+          disabled={isGameOver}
         >
           ⌫ Delete
         </button>
@@ -123,10 +145,32 @@ export function GameBoard({ board, currentRow, message, isShaking, onSubmit, onD
           className="btn btn-success"
           onClick={onSubmit}
           aria-label="Submit your guess"
+          disabled={isGameOver}
         >
           Enter ↵
         </button>
       </div>
+
+      {/* Game over indicators */}
+      {isGameOver && (
+        <div
+          className={`game-over-indicator ${isWon ? 'game-over-indicator--won' : 'game-over-indicator--lost'}`}
+          role="status"
+          aria-live="polite"
+        >
+          {isWon ? (
+            <>
+              <span className="game-over-emoji">🎉</span>
+              <span className="game-over-text">Vitória!</span>
+            </>
+          ) : (
+            <>
+              <span className="game-over-emoji">💀</span>
+              <span className="game-over-text">Game Over!</span>
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
 }

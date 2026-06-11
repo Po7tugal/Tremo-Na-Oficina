@@ -5,9 +5,9 @@ export function Header({ highContrast, toggleHighContrast, onNewGame, gameState 
     <header className="app-header" role="banner">
       <div className="header-inner">
         <div className="header-brand">
-          <h1 className="app-title" aria-label="Tremo — Jogo de Língua Gestual">
+          <h1 className="app-title" aria-label="Tremo Na Oficina — Jogo de Língua Gestual">
             <span className="title-sign" aria-hidden="true">🤟</span>
-            <span className="title-accent">Tremo</span>
+            <span className="title-accent">Tremo Na Oficina</span>
           </h1>
         </div>
 

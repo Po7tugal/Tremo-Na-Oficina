@@ -71,9 +71,9 @@ export function useWebcam(onLetter) {
     } catch (err) {
       console.error('[useWebcam] Camera error:', err);
       let msg = 'Camera access failed.';
-      if (err.name === 'NotAllowedError') msg = 'Camera permission denied. Please allow camera access.';
-      if (err.name === 'NotFoundError') msg = 'No camera found on this device.';
-      if (err.name === 'NotReadableError') msg = 'Camera is in use by another application.';
+      if (err.name === 'NotAllowedError') msg = 'Acesso à câmera negado.';
+      if (err.name === 'NotFoundError') msg = 'Nenhuma câmera encontrada.';
+      if (err.name === 'NotReadableError') msg = 'Câmera está em uso por outra aplicação.';
       setErrorMessage(msg);
       setCameraState('error');
     }

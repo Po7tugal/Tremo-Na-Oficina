@@ -4,6 +4,7 @@
   "description": "Accessible Wordle-inspired game using sign language gestures",
   "private": true,
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

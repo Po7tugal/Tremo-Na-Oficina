@@ -1,133 +1,139 @@
 /* ============================================================
-   reference.css — Sign Language Alphabet Reference Styles
+   reference.css — Sign Reference Panel
    ============================================================ */
 
-.reference-section {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--sp-5);
-}
-
-.reference-header {
+.sign-reference {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--sp-3);
-}
-.reference-header .section-title {
-  margin-bottom: 0;
+  flex-direction: column;
+  gap: var(--sp-3);
+  height: 100%;
 }
 
-.toggle-btn {
-  font-size: 0.8rem;
-  padding: var(--sp-1) var(--sp-3);
-  min-height: 36px;
-}
-
-.reference-intro {
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
-  margin-bottom: var(--sp-4);
-  line-height: 1.6;
-}
-
-/* ── Sign Grid ────────────────────────────────────────────── */
+/* ── A–Z grid ────────────────────────────────────────────── */
 .sign-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-4);
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 6px;
 }
 
-/* ── Single Sign Card ─────────────────────────────────────── */
+/* ── ENTER + BACKSPACE row ───────────────────────────────── */
+.sign-specials {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+/* ── Card base ───────────────────────────────────────────── */
 .sign-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-1);
-  padding: var(--sp-2);
+  justify-content: flex-start;
+  gap: 3px;
+  padding: 6px 4px 5px;
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: default;
-  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+  transition:
+    border-color 0.15s,
+    background   0.15s,
+    transform    0.15s,
+    box-shadow   0.15s;
+  overflow: hidden;
+  /* hint is hidden until hover/highlight */
 }
 
 .sign-card:hover {
   border-color: var(--color-text-muted);
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  z-index: 1;
 }
 
-/* Highlighted when that letter is currently detected */
+/* Highlighted — letter just detected */
 .sign-card--highlighted {
   border-color: var(--color-accent) !important;
-  background: rgba(124, 106, 247, 0.15) !important;
-  transform: translateY(-2px) scale(1.05) !important;
-  box-shadow: 0 0 12px rgba(124, 106, 247, 0.4);
+  background: rgba(124, 106, 247, 0.18) !important;
+  transform: translateY(-2px) scale(1.08) !important;
+  box-shadow: 0 0 12px rgba(124, 106, 247, 0.45);
+  z-index: 2;
 }
 
-/* ── Illustration ─────────────────────────────────────────── */
-.sign-illustration {
-  width: 56px;
-  height: 56px;
-}
-.sign-svg {
-  width: 100%;
-  height: 100%;
-}
-
-/* SVG elements use CSS variables for theme compatibility */
-.sign-circle {
-  fill: var(--color-surface);
-  stroke: var(--color-text-muted);
-  stroke-width: 2;
-}
-.sign-card--highlighted .sign-circle {
-  stroke: var(--color-accent);
-}
-.sign-svg-letter {
-  fill: var(--color-text);
-  font-family: var(--font-mono);
-}
-.sign-wrist {
-  fill: var(--color-text-muted);
-  opacity: 0.5;
-}
-
-/* ── Sign Info ────────────────────────────────────────────── */
-.sign-info {
-  display: flex;
-  flex-direction: column;
+/* Special cards (ENTER / BACKSPACE) — wider */
+.sign-card--special {
+  flex-direction: row;
   align-items: center;
-  gap: 2px;
-  text-align: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-style: dashed;
 }
-.sign-letter-label {
+
+/* ── Big letter ──────────────────────────────────────────── */
+.sign-card-letter {
   font-family: var(--font-mono);
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--color-text);
+  line-height: 1;
+  transition: color 0.15s;
 }
-.sign-description {
+
+.sign-card--highlighted .sign-card-letter {
+  color: var(--color-accent);
+}
+
+/* ── Label (for specials) ────────────────────────────────── */
+.sign-card-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.sign-card--highlighted .sign-card-label {
+  color: var(--color-accent);
+}
+
+/* Hide label on regular cards (letter is the label) */
+.sign-card:not(.sign-card--special) .sign-card-label {
+  display: none;
+}
+
+/* ── Emoji icon (specials) ───────────────────────────────── */
+.sign-card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Hint text ───────────────────────────────────────────── */
+/*
+  Hidden by default on small cards.
+  Shown on hover and when highlighted.
+  On special (wide) cards always visible.
+*/
+.sign-card-hint {
   font-size: 0.55rem;
   color: var(--color-text-muted);
+  text-align: center;
   line-height: 1.3;
-  display: none; /* Hidden by default to save space in the grid */
+  display: none;
 }
-.sign-card:hover .sign-description,
-.sign-card--highlighted .sign-description {
+
+.sign-card:hover .sign-card-hint,
+.sign-card--highlighted .sign-card-hint {
   display: block;
 }
 
-/* ── Note ─────────────────────────────────────────────────── */
-.reference-note {
-  font-size: 0.78rem;
-  color: var(--color-text-muted);
-  line-height: 1.5;
-  padding-top: var(--sp-3);
-  border-top: 1px solid var(--color-border);
+.sign-card--special .sign-card-hint {
+  display: block;
+  text-align: left;
+  font-size: 0.75rem;
 }
-.reference-note strong {
-  color: var(--color-warning);
+
+.sign-card--highlighted .sign-card-hint {
+  color: rgba(124, 106, 247, 0.85);
 }
