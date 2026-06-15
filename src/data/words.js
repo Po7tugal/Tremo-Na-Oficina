@@ -5,30 +5,62 @@
  */
 
 const _raw = [
-  "CAMPO", "MONTE", "PEDRA", "FOLHA", "TERRA",
-  "CHUVA", "VENTO", "NUVEM", "PRAIA", "AREIA",
-  "FRUTO", "ROCHA", "TIGRE", "COBRA", "LEBRE",
-  "BURRO", "POMBO", "PEIXE", "VEADO", "CORVO",
-  "DENTE", "NARIZ", "PULSO", "DEDOS", "NERVO",
-  "PORTA", "COLHE", "GARFO", "VERDE", "LINHA",
-  "RISCO", "CICLO", "SALTO", "DANCA", "SONHO",
-  "RISOS", "CANTO", "TEMPO", "MUNDO", "ORDEM",
-  "PODER", "FORCA", "SABER", "VALOR", "HONRA",
-  "ALHOS", "FALAR", "SORTE", "FILHO", "COISA",
-  "NUNCA", "AINDA", "ANTES", "QUASE", "JUNHO",
-  "MARCO", "ABRIL", "JULHO", "BARCO", "CARRO",
-  "PONTE", "BAIRRO", "LARGO", "PRACA", "TORRE",
-  "MUROS", "GRADE", "CERCA", "LIVRO", "PAPEL",
-  "CARTA", "CONTO", "VERSO", "DRAMA", "BANDO",
-  "CORPO", "GRITO", "BAIXO", "OLHAR", "HAVIA",
-  "AGORA", "MESMO", "AMBOS", "FRACO", "FORTE",
-  "BRAVO", "NOBRE", "LENTO", "JUSTO", "FALSO",
-  "DIGNO", "POBRE", "MAGRO", "GORDO", "CALMO",
-  "TRIGO", "MILHO", "FIGOS", "BANCO", "BOLSO",
-  "CAIXA", "COFRE", "PRESO", "JUIZO", "CRIME",
-  "PENAS", "CULPA", "PLANO", "OUVIR", "OLHOS",
-  "BEBER", "COMER", "ANDAR", "SUBIR", "NADAR",
-  "JOGAR", "GANHO", "PERDA", "LUTAR", "REZAR",
+  // Natureza
+  "CAMPO", "MONTE", "PEDRA", "FOLHA", "TERRA", "CHUVA", "VENTO", "NUVEM", "PRAIA", "AREIA",
+  "FRUTO", "ROCHA", "LINHO", "SELVA", "NEVOA", "LAGOA", "FLORA", "FAUNA", "DUNAS", "BREJO",
+  "PRADO", "CAULE", "PINHA", "SEIXO", "BOLHA", "FOSSO", "FONTE", "BRUMA", "CINZA", "FLOCO",
+  "GELO", "MORRO",
+
+  // Animais
+  "TIGRE", "COBRA", "LEBRE", "BURRO", "POMBO", "PEIXE", "VEADO", "CORVO", "MOSCA", "PULGA",
+  "GANSO", "ARARA", "LINCE", "TOURO", "SAPOS", "RATOS", "CISNE", "GARÇA",
+
+  // Corpo
+  "DENTE", "NARIZ", "PULSO", "DEDOS", "NERVO", "OSSOS", "CARNE", "PELES", "PELOS", "UNHAS",
+  "BOCAS", "LABIO", "NUCA", "TORAX", "AXILA",
+
+  // Casa e objetos
+  "PORTA", "GARFO", "LINHA", "GRADE", "CERCA", "LIVRO", "PAPEL", "CARTA", "BANCO", "BOLSO",
+  "CAIXA", "COFRE", "CARRO", "BARCO", "PONTE", "TORRE", "MUROS", "BALDE", "FORNO", "COLHE",
+  "TACHO", "COPOS", "VIDRO", "METAL", "FERRO", "COBRE", "PRATA", "SOFAS", "CHAVE", "CORDA",
+  "FITAS",
+
+  // Ações
+  "FALAR", "OUVIR", "OLHAR", "BEBER", "COMER", "ANDAR", "SUBIR", "NADAR", "JOGAR", "LUTAR",
+  "REZAR", "DANCA", "SALTO", "SONHO", "GANHO", "PERDA", "FUGIR", "CAVAR", "LAVAR", "SECAR",
+  "VIRAR", "GIRAR", "ABRIR", "PUXAR", "BATER", "TOCAR", "LIGAR", "MOVER",
+
+  // Adjetivos
+  "VERDE", "FRACO", "FORTE", "BRAVO", "NOBRE", "LENTO", "JUSTO", "FALSO", "DIGNO", "POBRE",
+  "MAGRO", "GORDO", "CALMO", "TERNO", "CRUEL", "FEROZ", "FIRME", "CLARO", "LINDO", "TOSCO",
+  "BRUTO", "SUAVE", "LARGO", "CURTO", "VELHO",
+
+  // Abstrato
+  "RISCO", "CICLO", "CANTO", "TEMPO", "MUNDO", "ORDEM", "PODER", "FORCA", "SABER", "VALOR",
+  "HONRA", "SORTE", "NUNCA", "AINDA", "ANTES", "QUASE", "CORPO", "GRITO", "BAIXO", "HAVIA",
+  "AGORA", "MESMO", "AMBOS", "DRAMA", "BANDO", "VERSO", "CONTO", "RISOS", "CAUSA", "NORMA",
+  "DEVER", "LABOR", "RAZAO", "FATOS", "IDEIA", "SENSO",
+
+  // Alimentação
+  "ALHOS", "TRIGO", "MILHO", "FIGOS", "ARROZ", "SOPAS", "CALDO", "NATAS", "LEITE", "CREME",
+  "DOCES", "TORTA", "BOLO", "PERAS", "MAÇAS", "LIMAO", "MANGA", "MELAO", "AMEND", "NOZES",
+
+  // Tempo e calendário
+  "JUNHO", "MARCO", "ABRIL", "JULHO", "TARDE", "NOITE", "MANHA", "ONTEM", "CEDO", "PRAZO",
+  "DATAS", "HORAS", "MESES",
+
+  // Lugares
+  "LARGO", "PRACA", "BAIRRO", "CAMPO", "FUNDO", "SITIO", "RUINA", "VIELA", "SOLAR", "PATIO",
+  "ADEGA", "CAVES", "EIRAS", "ALDEI", "VILAS",
+
+  // Crime e lei
+  "PRESO", "JUIZO", "CRIME", "PENAS", "CULPA", "PLANO", "MULTA", "PROVA", "CELAS",
+
+  // Letras e cultura
+  "PROSA", "AUTOR", "TEXTO", "POEMA", "RITMO", "MITOS", "LENDA",
+
+  // Outros / miscelânea
+  "FILHO", "COISA", "OLHOS", "HAVIA", "FRUTO", "DIGNO",
 ];
 
 const _seen = new Set();
