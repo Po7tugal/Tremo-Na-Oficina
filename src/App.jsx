@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Header } from './components/Header.jsx';
 import { WebcamView } from './components/WebcamView.jsx';
 import { GameBoard } from './components/GameBoard.jsx';
-import { SignReference } from './components/SignReference.jsx';
+import SignReference from './components/SignReference.jsx';
 import { useGameLogic } from './hooks/useGameLogic.js';
 import { GAME_STATE } from './utils/gameLogic.js';
 
