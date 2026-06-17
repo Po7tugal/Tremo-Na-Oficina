@@ -1,347 +1,100 @@
-/**
- * game-animations.css — Victory and Game Over animations
- */
-
-/* ============================================
-   TILE ANIMATIONS
-   ============================================ */
-
-/* Flip animation for tile reveal */
-@keyframes tileFlip {
-  0% {
-    transform: rotateX(0);
-    background-color: var(--color-pending, #3d3d4d);
-  }
-  50% {
-    transform: rotateX(90deg);
-  }
-  100% {
-    transform: rotateX(0);
-  }
+/* ============================================================
+   game-animations.css — Reveal, Victory & Game Over
+   ============================================================ */
+/* ── Reusable keyframes ───────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
-.tile {
-  perspective: 1000px;
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
 }
-
-.tile[data-status="correct"],
-.tile[data-status="present"],
-.tile[data-status="absent"] {
-  animation: tileFlip 0.6s ease-in-out;
-}
-
-/* ============================================
-   SHAKE ANIMATION (Wrong input)
-   ============================================ */
-
-@keyframes shake {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  10%, 30%, 50%, 70%, 90% {
-    transform: translateX(-5px);
-  }
-  20%, 40%, 60%, 80% {
-    transform: translateX(5px);
-  }
-}
-
-.tile-row--active.tile--shake {
-  animation: shake 0.5s ease-in-out;
-}
-
-.tile--shake {
-  animation: shake 0.5s ease-in-out !important;
-}
-
-/* ============================================
-   POP ANIMATION (Letter added)
-   ============================================ */
-
-@keyframes pop {
-  0% {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.tile--pop {
-  animation: pop 0.3s ease-out;
-}
-
-/* ============================================
-   GAME OVER - LOSS ANIMATION
-   ============================================ */
-
-@keyframes gameOverShake {
-  0%, 100% {
-    transform: translateX(0) rotate(0deg);
-  }
-  10% {
-    transform: translateX(-10px) rotate(-2deg);
-  }
-  20% {
-    transform: translateX(10px) rotate(2deg);
-  }
-  30% {
-    transform: translateX(-10px) rotate(-2deg);
-  }
-  40% {
-    transform: translateX(10px) rotate(2deg);
-  }
-  50% {
-    transform: translateX(-10px) rotate(-2deg);
-  }
-  60%, 100% {
-    transform: translateX(0) rotate(0deg);
-  }
-}
-
-@keyframes fadeOutUp {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes pulseRed {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-  }
-}
-
-/* Game over board state */
-.board-grid[data-game-state="lost"] {
-  animation: gameOverShake 0.8s ease-in-out;
-}
-
-.board-grid[data-game-state="lost"] .tile-row:nth-child(6) {
-  animation: pulseRed 1s ease-in-out infinite;
-  filter: brightness(0.8);
-}
-
-/* Game over message styling */
-.message-toast[data-type="loss"] {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  font-weight: bold;
-  font-size: 18px;
-  animation: slideDown 0.5s ease-out;
-  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
-}
-
-/* ============================================
-   VICTORY ANIMATION
-   ============================================ */
-
-@keyframes victoryPulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes confetti {
-  0% {
-    transform: translateY(0) rotate(0deg);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-100px) rotate(360deg);
-    opacity: 0;
-  }
-}
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-/* Victory board state */
-.board-grid[data-game-state="won"] {
-  animation: victoryPulse 0.6s ease-in-out;
-}
-
-.board-grid[data-game-state="won"] .tile-row:last-child {
-  animation: bounce 0.6s ease-in-out;
-}
-
-/* Victory message styling */
-.message-toast[data-type="win"] {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  font-weight: bold;
-  font-size: 20px;
-  animation: slideDown 0.5s ease-out, victoryPulse 0.6s ease-in-out 0.5s;
-  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-}
-
-/* ============================================
-   MESSAGE TOAST ANIMATIONS
-   ============================================ */
-
 @keyframes slideDown {
-  0% {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes slideUp {
-  0% {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-12px); }
 }
-
-.message-toast {
-  animation: slideDown 0.3s ease-out;
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 var(--color-accent-glow); }
+  50%      { box-shadow: 0 0 0 14px transparent; }
 }
-
-.message-toast--visible.message-toast {
-  animation: slideDown 0.3s ease-out;
+@keyframes pulseRed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); }
+  50%      { box-shadow: 0 0 0 14px transparent; }
 }
-
-/* ============================================
-   ROW ANIMATIONS
-   ============================================ */
-
-@keyframes rowReveal {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+/* ── Game Over (loss) ─────────────────────────────────────── */
+@keyframes gameOverShake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  10%      { transform: translateX(-10px) rotate(-1.5deg); }
+  20%      { transform: translateX(10px) rotate(1.5deg); }
+  30%      { transform: translateX(-10px) rotate(-1.5deg); }
+  40%      { transform: translateX(10px) rotate(1.5deg); }
+  50%      { transform: translateX(-8px) rotate(-1deg); }
+  60%      { transform: translateX(6px) rotate(0.5deg); }
+  70%, 100% { transform: translateX(0) rotate(0); }
 }
-
-.tile-row {
-  animation: rowReveal 0.3s ease-out;
+.board-grid[data-game-state="lost"],
+.board-section[data-game-state="lost"] {
+  animation: gameOverShake 0.85s var(--ease-in-out);
 }
-
-/* ============================================
-   BUTTON ANIMATIONS
-   ============================================ */
-
+.board-grid[data-game-state="lost"] .tile-row:last-child {
+  animation: pulseRed 1.4s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+/* ── Victory ──────────────────────────────────────────────── */
+@keyframes victoryPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+@keyframes confettiFall {
+  0%   { transform: translateY(-20vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.board-grid[data-game-state="won"] {
+  animation: victoryPulse 0.7s var(--ease-in-out);
+}
+/* Confetti container — render N children with random offsets via JS */
+.confetti-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  top: -20px;
+  border-radius: 2px;
+  animation: confettiFall 2.6s linear forwards;
+}
+/* ── Toast slides ─────────────────────────────────────────── */
+.message-toast { animation: slideDown 0.3s var(--ease-out); }
+/* ── Row reveal entrance ──────────────────────────────────── */
+.tile-row { animation: scaleIn 0.3s var(--ease-out); }
+/* ── Button micro-interactions ────────────────────────────── */
 @keyframes buttonPress {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.95);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+  100% { transform: scale(1); }
 }
-
-.btn:active {
-  animation: buttonPress 0.2s ease-out;
-}
-
-/* ============================================
-   KEYBOARD KEY ANIMATIONS
-   ============================================ */
-
-@keyframes keyPress {
-  0% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(2px);
-  }
-  100% {
-    transform: translateY(0);
-  }
-}
-
-.key:active {
-  animation: keyPress 0.15s ease-out;
-}
-
-/* ============================================
-   LOADING/PROGRESS ANIMATIONS
-   ============================================ */
-
+.btn:active { animation: buttonPress 0.18s var(--ease-out); }
+/* ── Loading pulse ────────────────────────────────────────── */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
 }
-
-.loading {
-  animation: pulse 1.5s ease-in-out infinite;
-}
-
-/* ============================================
-   RESPONSIVE ADJUSTMENTS
-   ============================================ */
-
+.loading { animation: pulse 1.5s ease-in-out infinite; }
+/* ── Reduced motion ───────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *, *::before, *::after {
     animation: none !important;
     transition: none !important;
-  }
-}
-
-@media (max-width: 768px) {
-  @keyframes gameOverShake {
-    0%, 100% {
-      transform: translateX(0) rotate(0deg);
-    }
-    10% {
-      transform: translateX(-8px) rotate(-1deg);
-    }
-    20% {
-      transform: translateX(8px) rotate(1deg);
-    }
-    30% {
-      transform: translateX(-8px) rotate(-1deg);
-    }
-    40% {
-      transform: translateX(8px) rotate(1deg);
-    }
-    50% {
-      transform: translateX(-8px) rotate(-1deg);
-    }
-    60%, 100% {
-      transform: translateX(0) rotate(0deg);
-    }
   }
 }

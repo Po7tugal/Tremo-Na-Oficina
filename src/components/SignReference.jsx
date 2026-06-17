@@ -46,40 +46,56 @@ export default function SignReference({ activeLetters = [] }) {
 
   return (
     <div className="sign-reference">
-      <h3 className="sign-reference__title">Alfabeto Manual LGP</h3>
+      <header className="sign-reference-header">
+        <h3 className="sign-reference-title">Alfabeto Manual LGP</h3>
+        <p className="sign-reference-subtitle">Toca numa letra para ver o gesto</p>
+      </header>
 
-      <div className="sign-reference__grid">
+      <div className="sign-grid">
         {ALPHABET.map((letter) => {
-          const isActive  = activeLetters.includes(letter);
+          const isActive = activeLetters.includes(letter);
           const isSelected = selected === letter;
 
           return (
             <button
               key={letter}
+              type="button"
               className={[
-                "sign-reference__key",
-                isActive   ? "sign-reference__key--active"   : "",
-                isSelected ? "sign-reference__key--selected" : "",
+                "sign-card",
+                isActive ? "sign-card--highlighted" : "",
+                isSelected ? "sign-card--selected" : "",
               ].join(" ").trim()}
               onClick={() => setSelected(isSelected ? null : letter)}
-              title={LGP_GESTURES[letter].desc}
+              aria-pressed={isSelected}
             >
-              {letter}
+              <span className="sign-card-letter">{letter}</span>
+              <span className="sign-card-hint">{LGP_GESTURES[letter].desc}</span>
             </button>
           );
         })}
       </div>
 
+      <div className="sign-specials">
+        <button type="button" className="sign-card sign-card--special">
+          <span className="sign-card-icon" aria-hidden="true">⏎</span>
+          <span className="sign-card-label">ENTER</span>
+          <span className="sign-card-hint">Confirma a letra</span>
+        </button>
+        <button type="button" className="sign-card sign-card--special">
+          <span className="sign-card-icon" aria-hidden="true">⌫</span>
+          <span className="sign-card-label">BACKSPACE</span>
+          <span className="sign-card-hint">Apaga a última letra</span>
+        </button>
+      </div>
+
       {selected && (
-        <div className="sign-reference__tooltip">
-          <span className="sign-reference__tooltip-letter">{selected}</span>
-          <span className="sign-reference__tooltip-desc">
-            {LGP_GESTURES[selected].desc}
-          </span>
+        <div className="sign-tooltip">
+          <span className="sign-tooltip-letter">{selected}</span>
+          <span className="sign-tooltip-desc">{LGP_GESTURES[selected].desc}</span>
         </div>
       )}
 
-      <p className="sign-reference__credit">
+      <p className="sign-reference-credit">
         Baseado no Alfabeto Manual da Associação Portuguesa de Surdos (APS, 2009)
       </p>
     </div>

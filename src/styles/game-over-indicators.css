@@ -1,220 +1,91 @@
-/**
- * game-over-indicators.css — Victory and Game Over visual indicators
- */
-
-/* ============================================
-   GAME OVER INDICATOR CONTAINER
-   ============================================ */
-
+/* ============================================================
+   game-over-indicators.css — Win/Loss Indicator Pills
+   ============================================================ */
 .game-over-indicator {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-top: 24px;
-  padding: 16px 24px;
-  border-radius: 12px;
-  font-weight: bold;
-  font-size: 18px;
-  animation: slideDown 0.5s ease-out;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  gap: var(--sp-3);
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: indicatorIn 0.5s var(--ease-out);
 }
-
+@keyframes indicatorIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 .game-over-emoji {
-  font-size: 28px;
+  font-size: 1.5em;
   display: inline-block;
-  animation: bounce 0.6s ease-in-out;
+  line-height: 1;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
 }
-
-.game-over-text {
-  letter-spacing: 1px;
-}
-
-/* Victory indicator */
+.game-over-text { letter-spacing: 0.08em; }
+/* ── Won ──────────────────────────────────────────────────── */
 .game-over-indicator--won {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
-  border: 2px solid #10b981;
-  color: #10b981;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, rgba(78,168,98,0.22), rgba(78,168,98,0.08));
+  border: 1px solid rgba(78,168,98,0.5);
+  color: #86efac;
+  box-shadow:
+    0 0 0 1px rgba(78,168,98,0.15),
+    0 10px 28px -8px var(--color-correct-glow);
 }
-
 .game-over-indicator--won .game-over-emoji {
-  animation: bounce 0.6s ease-in-out, spin 2s linear infinite;
+  animation: trophyBounce 1.4s var(--ease-in-out) infinite;
 }
-
-/* Loss indicator */
+@keyframes trophyBounce {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50%      { transform: translateY(-6px) rotate(6deg); }
+}
+/* ── Lost ─────────────────────────────────────────────────── */
 .game-over-indicator--lost {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%);
-  border: 2px solid #ef4444;
-  color: #ef4444;
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(239,68,68,0.08));
+  border: 1px solid rgba(239,68,68,0.5);
+  color: #fca5a5;
+  box-shadow:
+    0 0 0 1px rgba(239,68,68,0.15),
+    0 10px 28px -8px rgba(239,68,68,0.4);
 }
-
 .game-over-indicator--lost .game-over-emoji {
-  animation: shake 0.5s ease-in-out;
+  animation: emojiShake 0.6s var(--ease-in-out);
 }
-
-/* ============================================
-   TILE ROW LOSS STATE
-   ============================================ */
-
+@keyframes emojiShake {
+  0%, 100% { transform: rotate(0) translateX(0); }
+  25%      { transform: rotate(-8deg) translateX(-2px); }
+  50%      { transform: rotate(8deg) translateX(2px); }
+  75%      { transform: rotate(-4deg) translateX(-1px); }
+}
+/* ── Row state on loss ────────────────────────────────────── */
 .tile-row--lost {
-  filter: brightness(0.85);
-  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
-  border-radius: 8px;
-  padding: 4px;
+  filter: brightness(0.85) saturate(0.8);
+  border-radius: var(--radius-md);
+  box-shadow: 0 0 24px -4px rgba(239,68,68,0.35);
 }
-
-/* ============================================
-   BOARD SECTION LOSS STATE
-   ============================================ */
-
-.board-section[data-game-state="lost"] {
-  animation: gameOverShake 0.8s ease-in-out;
-}
-
-/* ============================================
-   ANIMATIONS
-   ============================================ */
-
-@keyframes bounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  25% {
-    transform: translateY(-8px);
-  }
-  50% {
-    transform: translateY(0);
-  }
-  75% {
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes shake {
-  0%, 100% {
-    transform: rotate(0deg) translateX(0);
-  }
-  10% {
-    transform: rotate(-5deg) translateX(-2px);
-  }
-  20% {
-    transform: rotate(5deg) translateX(2px);
-  }
-  30% {
-    transform: rotate(-5deg) translateX(-2px);
-  }
-  40% {
-    transform: rotate(5deg) translateX(2px);
-  }
-  50% {
-    transform: rotate(-5deg) translateX(-2px);
-  }
-  60% {
-    transform: rotate(0deg) translateX(0);
-  }
-}
-
-@keyframes slideDown {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes gameOverShake {
-  0%, 100% {
-    transform: translateX(0) rotate(0deg);
-  }
-  5% {
-    transform: translateX(-15px) rotate(-1deg);
-  }
-  10% {
-    transform: translateX(15px) rotate(1deg);
-  }
-  15% {
-    transform: translateX(-15px) rotate(-1deg);
-  }
-  20% {
-    transform: translateX(15px) rotate(1deg);
-  }
-  25% {
-    transform: translateX(-15px) rotate(-1deg);
-  }
-  30% {
-    transform: translateX(15px) rotate(1deg);
-  }
-  35%, 100% {
-    transform: translateX(0) rotate(0deg);
-  }
-}
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
-
-@media (max-width: 768px) {
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 760px) {
   .game-over-indicator {
-    font-size: 16px;
-    gap: 8px;
-    padding: 12px 16px;
+    font-size: 0.88rem;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-4);
   }
-
-  .game-over-emoji {
-    font-size: 24px;
-  }
+  .game-over-emoji { font-size: 1.3em; }
 }
-
-@media (max-width: 480px) {
+@media (max-width: 420px) {
   .game-over-indicator {
-    font-size: 14px;
-    gap: 6px;
-    padding: 10px 12px;
-  }
-
-  .game-over-emoji {
-    font-size: 20px;
+    font-size: 0.78rem;
+    padding: 10px 14px;
   }
 }
-
-/* ============================================
-   DARK MODE SUPPORT
-   ============================================ */
-
-@media (prefers-color-scheme: dark) {
-  .game-over-indicator--won {
-    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
-  }
-
-  .game-over-indicator--lost {
-    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%);
-  }
-}
-
-/* ============================================
-   REDUCED MOTION SUPPORT
-   ============================================ */
-
+/* ── Reduced motion ───────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .game-over-indicator,
   .game-over-emoji,
-  .tile-row--lost,
-  .board-section[data-game-state="lost"] {
-    animation: none;
-  }
+  .tile-row--lost { animation: none; }
 }

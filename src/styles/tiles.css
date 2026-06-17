@@ -1,34 +1,57 @@
 /* ============================================================
-   tiles.css — Game Board & Tile Styles
+   tiles.css — Game Board & Tiles
    ============================================================ */
-
-/* ── Board Section ────────────────────────────────────────── */
 .board-section {
-  background: var(--color-surface);
+  position: relative;
+  background:
+    linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: var(--sp-6);
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+  box-shadow: var(--shadow-lg), var(--shadow-inset);
+  overflow: hidden;
 }
-
+/* Soft glow ring behind board */
+.board-section::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    rgba(139,124,255,0.35),
+    transparent 40%,
+    transparent 60%,
+    rgba(78,168,98,0.18));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.7;
+}
 /* ── Grid ─────────────────────────────────────────────────── */
 .board-grid {
   display: flex;
   flex-direction: column;
   gap: var(--tile-gap);
-  margin: var(--sp-6) 0;
+  margin: var(--sp-5) 0;
+  perspective: 1200px;
 }
-
 /* ── Row ──────────────────────────────────────────────────── */
 .tile-row {
   display: flex;
   gap: var(--tile-gap);
 }
-
-/* ── Individual Tile ──────────────────────────────────────── */
+/* Active row hint (subtle pulse on bottom border via accent) */
+.tile-row--active .tile--empty,
+.tile-row--active .tile--pending {
+  border-color: var(--color-text-dim);
+}
+/* ── Tile ─────────────────────────────────────────────────── */
 .tile {
   width: var(--tile-size);
   height: var(--tile-size);
@@ -40,116 +63,131 @@
   font-weight: 700;
   color: var(--color-tile-text);
   border: 2px solid var(--color-tile-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   text-transform: uppercase;
   user-select: none;
-  transition: border-color var(--transition), background var(--transition-slow);
   position: relative;
+  transform-style: preserve-3d;
+  background: var(--color-surface-2);
+  box-shadow: var(--shadow-tile);
+  transition:
+    border-color var(--transition),
+    background var(--transition-slow),
+    transform var(--transition);
 }
-
 /* Empty */
 .tile--empty {
   border-color: var(--color-border);
-  background: transparent;
+  background: rgba(255,255,255,0.015);
+  box-shadow: none;
 }
-
-/* Pending (typed but not submitted) */
+/* Pending */
 .tile--pending {
-  border-color: var(--color-text-muted);
-  background: transparent;
+  border-color: var(--color-accent);
+  background: var(--color-surface-2);
+  box-shadow:
+    var(--shadow-tile),
+    0 0 0 1px var(--color-accent-glow);
 }
-
 /* Correct (green) */
 .tile--correct {
-  background: var(--color-correct);
+  background: linear-gradient(155deg, #5fbf76, var(--color-correct));
   border-color: var(--color-correct);
-  animation: flip-in 0.5s ease forwards;
+  box-shadow:
+    0 6px 18px -4px var(--color-correct-glow),
+    var(--shadow-inset);
+  animation: flip-in 0.6s var(--ease-in-out) forwards;
 }
-
 /* Present (yellow) */
 .tile--present {
-  background: var(--color-present);
+  background: linear-gradient(155deg, #e8bb55, var(--color-present));
   border-color: var(--color-present);
-  animation: flip-in 0.5s ease forwards;
+  box-shadow:
+    0 6px 18px -4px var(--color-present-glow),
+    var(--shadow-inset);
+  animation: flip-in 0.6s var(--ease-in-out) forwards;
 }
-
 /* Absent (gray) */
 .tile--absent {
-  background: var(--color-absent);
+  background: linear-gradient(155deg, #3a3a52, var(--color-absent));
   border-color: var(--color-absent);
-  animation: flip-in 0.5s ease forwards;
+  color: rgba(255,255,255,0.85);
+  box-shadow: var(--shadow-tile);
+  animation: flip-in 0.6s var(--ease-in-out) forwards;
 }
-
-/* Stagger flip animation for each tile in a row */
+/* Stagger reveal */
 .tile-row .tile:nth-child(1) { animation-delay: 0ms; }
-.tile-row .tile:nth-child(2) { animation-delay: 100ms; }
-.tile-row .tile:nth-child(3) { animation-delay: 200ms; }
-.tile-row .tile:nth-child(4) { animation-delay: 300ms; }
-.tile-row .tile:nth-child(5) { animation-delay: 400ms; }
-
-/* Pop animation when a letter is typed */
+.tile-row .tile:nth-child(2) { animation-delay: 120ms; }
+.tile-row .tile:nth-child(3) { animation-delay: 240ms; }
+.tile-row .tile:nth-child(4) { animation-delay: 360ms; }
+.tile-row .tile:nth-child(5) { animation-delay: 480ms; }
+/* Pop on letter input */
 .tile--pop {
-  animation: pop 0.1s ease;
+  animation: pop 0.18s var(--ease-out);
 }
-
+/* Winning row — celebratory bounce */
+.tile-row--win .tile {
+  animation: tileJump 0.7s var(--ease-out) both;
+}
+.tile-row--win .tile:nth-child(1) { animation-delay: 0ms; }
+.tile-row--win .tile:nth-child(2) { animation-delay: 90ms; }
+.tile-row--win .tile:nth-child(3) { animation-delay: 180ms; }
+.tile-row--win .tile:nth-child(4) { animation-delay: 270ms; }
+.tile-row --win .tile:nth-child(5) { animation-delay: 360ms; }
 /* ── Animations ───────────────────────────────────────────── */
 @keyframes flip-in {
   0%   { transform: rotateX(0deg); }
-  50%  { transform: rotateX(-90deg); }
+  45%  { transform: rotateX(-90deg); }
+  55%  { transform: rotateX(-90deg); }
   100% { transform: rotateX(0deg); }
 }
-
 @keyframes pop {
-  0%   { transform: scale(1); }
-  50%  { transform: scale(1.12); }
+  0%   { transform: scale(0.92); }
+  50%  { transform: scale(1.08); }
   100% { transform: scale(1); }
 }
-
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  15%       { transform: translateX(-6px); }
-  30%       { transform: translateX(6px); }
-  45%       { transform: translateX(-6px); }
-  60%       { transform: translateX(6px); }
-  75%       { transform: translateX(-4px); }
-  90%       { transform: translateX(4px); }
+  15% { transform: translateX(-7px); }
+  30% { transform: translateX(7px); }
+  45% { transform: translateX(-6px); }
+  60% { transform: translateX(6px); }
+  75% { transform: translateX(-3px); }
+  90% { transform: translateX(3px); }
 }
-
-/* Applied to the whole row on invalid guess */
-.tile--shake .tile,
-.tile-row--active.tile-row .tile {
-  /* shake is applied at row level */
+@keyframes tileJump {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-22px) scale(1.05); }
+  60%  { transform: translateY(0); }
+  80%  { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
 }
-
-/* Shake applied to the active row via .tile-row--active when isShaking=true */
+.tile-row.shaking,
 .board-grid .tile--shake {
-  animation: shake 0.6s ease;
+  animation: shake 0.55s var(--ease-in-out);
 }
-
-/* Actually apply shake to the row wrapper */
-.tile-row.shaking {
-  animation: shake 0.6s ease;
-}
-
-/* ── Board Actions ────────────────────────────────────────── */
+/* ── Actions ──────────────────────────────────────────────── */
 .board-actions {
   display: flex;
   gap: var(--sp-3);
   margin-top: var(--sp-4);
+  width: 100%;
+  max-width: 420px;
 }
-
 .board-actions .btn {
   flex: 1;
-  justify-content: center;
   font-size: 1rem;
   padding: var(--sp-3) var(--sp-4);
-  min-height: 48px;
+  min-height: 50px;
 }
-
-/* ── Responsive Tiles ─────────────────────────────────────── */
-@media (max-width: 500px) {
-  :root {
-    --tile-size: 52px;
-    --tile-font-size: 1.6rem;
-  }
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .board-section { padding: var(--sp-4); border-radius: var(--radius-lg); }
+  :root { --tile-size: 56px; --tile-font-size: 1.85rem; --tile-gap: 6px; }
+}
+@media (max-width: 420px) {
+  :root { --tile-size: 48px; --tile-font-size: 1.55rem; --tile-gap: 5px; }
+}
+@media (max-width: 340px) {
+  :root { --tile-size: 42px; --tile-font-size: 1.35rem; --tile-gap: 4px; }
 }

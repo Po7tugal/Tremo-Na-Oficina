@@ -1,303 +1,217 @@
 import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision";
 
-const CONFIDENCE_THRESHOLD = 0.75;
+const CONFIDENCE_THRESHOLD = 0.70;
 const HOLD_DURATION_MS = 1200;
 const COOLDOWN_MS = 1800;
 const PIPELINE_INTERVAL_MS = 80;
 
-// ─── Auxiliares de geometria ───────────────────────────────────────────────────
+// ─── Auxiliares de geometria base ──────────────────────────────────────────
 
 function dist(a, b) {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-// Distância normalizada pelo tamanho da palma (pulso → MCP do meio)
+function clamp(v, lo, hi) {
+  return Math.max(lo, Math.min(hi, v));
+}
+
+// Distância normalizada pelo tamanho da palma (pulso → MCP do médio)
+function palmSize(lm) {
+  return dist(lm[0], lm[9]) || 0.001;
+}
 function nd(a, b, lm) {
-  const palm = dist(lm[0], lm[9]) || 0.001;
-  return dist(a, b) / palm;
+  return dist(a, b) / palmSize(lm);
 }
 
-// O tip está claramente acima do pip? (dedo estendido)
-function up(tip, pip)    { return tip.y < pip.y - 0.02; }
-// O tip está claramente abaixo do pip? (dedo dobrado)
-function down(tip, pip)  { return tip.y > pip.y + 0.02; }
-// O tip está ao nível do pip? (meio dobrado)
-function level(tip, pip) { return Math.abs(tip.y - pip.y) <= 0.02; }
+// Ponto médio aproximado da palma (média dos 4 MCPs + pulso)
+function palmCenter(lm) {
+  const pts = [lm[0], lm[5], lm[9], lm[13], lm[17]];
+  return {
+    x: pts.reduce((s, p) => s + p.x, 0) / pts.length,
+    y: pts.reduce((s, p) => s + p.y, 0) / pts.length,
+  };
+}
 
-// ─── Reconhecedor LGP ─────────────────────────────────────────────────────────
+// ─── Curvatura por ângulo (NÃO depende da rotação da mão no ecrã) ─────────
+//
+// Em vez de comparar apenas a coordenada Y (que só funciona se o dedo
+// apontar para cima/baixo no ecrã), medimos o ângulo no nó PIP entre o
+// segmento PIP→MCP e o segmento PIP→TIP. Um dedo esticado dá um ângulo
+// próximo de 180°, independentemente de estar a apontar para cima, para
+// baixo ou de lado. Isto resolve a maior fonte de confusão do código
+// original (letras como M, N, T, G, H, L, onde o dedo/mão está rodado).
+
+function jointAngleDeg(mcp, pip, tip) {
+  const v1x = mcp.x - pip.x, v1y = mcp.y - pip.y;
+  const v2x = tip.x - pip.x, v2y = tip.y - pip.y;
+  const m1 = Math.hypot(v1x, v1y) || 0.0001;
+  const m2 = Math.hypot(v2x, v2y) || 0.0001;
+  const cos = clamp((v1x * v2x + v1y * v2y) / (m1 * m2), -1, 1);
+  return Math.acos(cos) * (180 / Math.PI);
+}
+
+// 1 = totalmente esticado, 0 = totalmente fechado, independente da direção
+function curl01(mcp, pip, tip) {
+  const deg = jointAngleDeg(mcp, pip, tip);
+  return clamp((deg - 50) / 120, 0, 1);
+}
+
+// Estado discreto do dedo a partir da curvatura (substitui o antigo up/down/level)
+function fstate(c) {
+  if (c > 0.62) return "up";     // esticado
+  if (c < 0.32) return "down";   // fechado
+  return "level";                // a meio (curvado tipo C/garra)
+}
+
+// Direção absoluta no ecrã de um dedo ESTICADO (só tem sentido quando o
+// dedo está esticado — usado para distinguir, p.ex., T (indicador de lado)
+// de H/L (indicador para cima), e M/N (dedos para baixo) de D (para cima).
+function screenDir(mcp, tip) {
+  const dx = tip.x - mcp.x, dy = tip.y - mcp.y;
+  const adx = Math.abs(dx), ady = Math.abs(dy);
+  if (ady > adx * 1.25) return dy < 0 ? "up" : "down";
+  if (adx > ady * 1.25) return "side";
+  return "diag";
+}
+
+// ─── Reconhecedor LGP ──────────────────────────────────────────────────────
 //
 // Referência visual: Alfabeto Manual — Associação Portuguesa de Surdos (2009)
-//
 // Landmarks MediaPipe (câmara espelhada, mão direita):
 //   0=pulso  1-4=polegar(cmc,mcp,ip,tip)
 //   5-8=indicador(mcp,pip,dip,tip)  9-12=médio  13-16=anelar  17-20=mínimo
+//
+// ARQUITETURA: em vez de um if/else sequencial (onde a primeira condição
+// satisfeita "ganha", mesmo que outra letra seja um match melhor — e onde
+// uma letra com condição mais restrita colocada DEPOIS de outra mais larga
+// nunca pode ser alcançada), calculamos um candidato para CADA letra e
+// devolvemos o de maior confiança. Isto elimina ramos "mortos" que existiam
+// no código original (ex: K e ENTER tinham a mesma condição, por isso ENTER
+// nunca podia disparar; Q e BACKSPACE colidiam da mesma forma).
 
 function recognizeLGP(lm) {
-  // ── Estado de cada dedo ───────────────────────────────────────────────────
-  const idx  = { up: up(lm[8],lm[6]),   down: down(lm[8],lm[6]),   level: level(lm[8],lm[6])  };
-  const mid  = { up: up(lm[12],lm[10]), down: down(lm[12],lm[10]), level: level(lm[12],lm[10]) };
-  const ring = { up: up(lm[16],lm[14]), down: down(lm[16],lm[14]), level: level(lm[16],lm[14]) };
-  const pink = { up: up(lm[20],lm[18]), down: down(lm[20],lm[18]), level: level(lm[20],lm[18]) };
+  const ps = palmSize(lm);
 
-  // Polegar: na câmara espelhada, tip à DIREITA do IP = polegar aberto
-  const thumbOut   = lm[4].x > lm[3].x + 0.03;
-  const thumbIn    = lm[4].x < lm[3].x - 0.01;
-  const thumbUpY   = lm[4].y < lm[3].y - 0.03;
-  const thumbDownY = lm[4].y > lm[3].y + 0.03;
+  // Curvatura (0-1) e estado de cada dedo
+  const idxCurl  = curl01(lm[5],  lm[6],  lm[8]);
+  const midCurl  = curl01(lm[9],  lm[10], lm[12]);
+  const ringCurl = curl01(lm[13], lm[14], lm[16]);
+  const pinkCurl = curl01(lm[17], lm[18], lm[20]);
 
-  const allDown = idx.down && mid.down && ring.down && pink.down;
-  const allUp   = idx.up   && mid.up   && ring.up   && pink.up;
+  const idxC  = fstate(idxCurl);
+  const midC  = fstate(midCurl);
+  const ringC = fstate(ringCurl);
+  const pinkC = fstate(pinkCurl);
 
-  // Distâncias normalizadas entre pontas
+  // Direção no ecrã (só fiável quando o dedo está esticado)
+  const idxDir  = screenDir(lm[5],  lm[8]);
+  const midDir  = screenDir(lm[9],  lm[12]);
+
+  const allDown = idxC === "down" && midC === "down" && ringC === "down" && pinkC === "down";
+  const allUp   = idxC === "up"   && midC === "up"   && ringC === "up"   && pinkC === "up";
+  const noneUp  = idxC !== "up"   && midC !== "up"   && ringC !== "up"   && pinkC !== "up";
+
+  // Polegar — mantemos a leitura por coordenadas de ecrã (câmara espelhada,
+  // mão direita), mas adicionamos a EXTENSÃO (distância ao centro da palma)
+  // e a ALTURA (acima/abaixo do nó do indicador), que são o que realmente
+  // separa A/E/G/Q/S/B, o grupo mais difícil do alfabeto.
+  const thumbOutSide = lm[4].x > lm[3].x + 0.03;
+  const thumbInSide  = lm[4].x < lm[3].x - 0.01;
+  const thumbUp       = lm[4].y < lm[3].y - 0.03;
+  const thumbDown      = lm[4].y > lm[3].y + 0.03;
+  const thumbExt       = nd(lm[4], palmCenter(lm), lm);       // 0=junto à palma, alto=esticado
+  const thumbHighUp     = lm[4].y < lm[5].y;                   // polegar acima do nó do indicador
+  const thumbOverFingers = lm[4].y < lm[8].y;                   // polegar acima da ponta do indicador (S)
+
+  // Distâncias normalizadas entre pontas (pinças e afastamento)
   const t2idx  = nd(lm[4], lm[8],  lm);
   const t2mid  = nd(lm[4], lm[12], lm);
-  const t2ring = nd(lm[4], lm[16], lm);
-  const t2pink = nd(lm[4], lm[20], lm);
   const i2mid  = nd(lm[8], lm[12], lm);
-  const i2pink = nd(lm[8], lm[20], lm);
-  const m2ring = nd(lm[12],lm[16], lm);
+  const m2ring = nd(lm[12], lm[16], lm);
 
-  // ── A: punho fechado, polegar ao lado (ponta do polegar sobre o indicador) ─
-  // LGP-A: dedos dobrados, polegar repousa lateralmente sobre os dedos
-  if (allDown && !thumbOut && t2idx > 0.25 && t2idx < 0.65 && !thumbUpY) {
-    return { letter: "A", confidence: 0.88 };
-  }
+  // Gancho específico do X (ponta do indicador dobra para baixo a meio,
+  // mantendo o nó PIP levantado) — geometria distinta de curvatura simples
+  const indexHook = lm[7].y < lm[6].y - 0.005 && lm[8].y > lm[7].y + 0.01;
 
-  // ── B: polegar para cima, restantes dedos dobrados ───────────────────────
-  // LGP-B: punho fechado mas com polegar esticado para cima
-  if (allDown && thumbUpY && !thumbOut) {
-    return { letter: "B", confidence: 0.90 };
-  }
+  const candidates = [];
+  const add = (letter, ok, confidence) => { if (ok) candidates.push({ letter, confidence }); };
 
-  // ── C: mão em forma de C, dedos curvados, polegar afastado ───────────────
-  // LGP-C: igual ao ASL — arco entre polegar e dedos
-  if (
-    !idx.up && !idx.down &&
-    !mid.up && !mid.down &&
-    !ring.up && !ring.down &&
-    thumbOut &&
-    t2idx > 0.30 && t2idx < 0.72 &&
-    t2mid > 0.30
-  ) {
-    return { letter: "C", confidence: 0.82 };
-  }
+  // ── Grupo: punho fechado (A, B, E, G, O, Q, S) ───────────────────────────
+  add("B", allDown && thumbUp && !thumbOutSide, 0.92);
+  add("Q", allDown && thumbDown && !thumbOutSide, 0.90);
+  add("A", allDown && thumbOutSide && !thumbUp && !thumbDown && thumbExt >= 0.32, 0.86);
+  add("S", allDown && !thumbOutSide && !thumbUp && !thumbDown &&
+        thumbExt >= 0.18 && thumbExt < 0.45 && thumbOverFingers, 0.80);
+  add("O", noneUp && t2idx < 0.30 && t2mid < 0.34, 0.84);
+  add("E", allDown && !thumbOutSide && !thumbUp && !thumbDown &&
+        thumbExt < 0.28 && !thumbHighUp, 0.78);
+  add("G", allDown && !thumbOutSide && !thumbUp && !thumbDown &&
+        thumbExt < 0.32 && thumbHighUp, 0.76);
 
-  // ── D: mão aberta, dedos juntos, polegar dobrado para a palma ─────────────
-  // LGP-D: palma aberta virada para a frente, 4 dedos juntos e estendidos, polegar fletido
-  if (
-    allUp && thumbIn &&
-    i2mid < 0.22 && m2ring < 0.22
-  ) {
-    return { letter: "D", confidence: 0.85 };
-  }
+  // ── Grupo: indicador só esticado (F, H, L) + T (indicador de lado) ──────
+  const indexAloneUp = idxC === "up" && idxDir === "up" &&
+    midC === "down" && ringC === "down" && pinkC === "down";
+  add("F", indexAloneUp && !thumbOutSide && thumbExt < 0.30, 0.85);
+  add("H", indexAloneUp && thumbOutSide && thumbExt >= 0.32 && thumbExt < 0.52, 0.78);
+  add("L", indexAloneUp && thumbOutSide && thumbExt >= 0.55, 0.86);
+  add("T", idxC === "up" && idxDir === "side" &&
+        midC === "down" && ringC === "down" && pinkC === "down" && thumbUp, 0.84);
 
-  // ── E: indicador estendido, restantes dobrados, polegar dobrado ────────────
-  // LGP-E: apenas indicador estendido (apontar)
-  if (
-    idx.up && mid.down && ring.down && pink.down && !thumbOut
-  ) {
-    return { letter: "E", confidence: 0.88 };
-  }
+  // ── Mínimo só esticado (I) ───────────────────────────────────────────────
+  add("I", pinkC === "up" && idxC === "down" && midC === "down" && ringC === "down" &&
+        !thumbOutSide, 0.87);
 
-  // ── F: indicador e polegar formam OK/círculo, outros três estendidos ───────
-  // LGP-F: igual ao ASL-F
-  if (
-    !idx.up && mid.up && ring.up && pink.up &&
-    t2idx < 0.28
-  ) {
-    return { letter: "F", confidence: 0.85 };
-  }
+  // ── Indicador + médio esticados juntos: U / K / V (por afastamento) ─────
+  const twoFingerUp = idxC === "up" && midC === "up" && ringC === "down" && pinkC === "down";
+  add("U", twoFingerUp && i2mid < 0.15, 0.86);
+  add("K", twoFingerUp && i2mid >= 0.18 && i2mid < 0.28, 0.79);
+  add("V", twoFingerUp && i2mid >= 0.31, 0.88);
+  add("R", idxC === "level" && midC === "level" && ringC === "level" && pinkC === "level" &&
+        thumbOutSide && (i2mid >= 0.22 || m2ring >= 0.22) && t2idx < 0.36, 0.77);
+  add("N", idxC === "up" && midC === "up" && ringC === "down" && pinkC === "down" &&
+        idxDir === "down" && !thumbOutSide, 0.82);
 
-  // ── G: indicador e polegar estendidos horizontalmente (pistola) ───────────
-  // LGP-G: indicador aponta para o lado, polegar para cima (forma de L deitado)
-  if (
-    idx.up && mid.down && ring.down && pink.down &&
-    thumbOut && !thumbUpY
-  ) {
-    return { letter: "G", confidence: 0.83 };
-  }
+  // ── Três dedos esticados (W) ──────────────────────────────────────────────
+  add("W", idxC === "up" && midC === "up" && ringC === "up" && pinkC === "down" &&
+        !thumbOutSide && (i2mid >= 0.15 || m2ring >= 0.15), 0.85);
 
-  // ── H: indicador e médio estendidos e juntos, apontando para o lado ────────
-  // LGP-H: dois dedos horizontais, juntos
-  if (
-    idx.up && mid.up && ring.down && pink.down &&
-    !thumbOut &&
-    i2mid < 0.20
-  ) {
-    return { letter: "H", confidence: 0.83 };
-  }
+  // ── Quatro dedos esticados juntos: D / M (direção) / J / ENTER / BACKSPACE
+  add("D", allUp && idxDir === "up" && thumbInSide && thumbExt < 0.35 &&
+        i2mid < 0.20 && m2ring < 0.20, 0.85);
+  add("M", allUp && idxDir === "down" && !thumbOutSide, 0.83);
+  add("J", allUp && idxDir === "up" && !thumbOutSide && thumbExt < 0.40 &&
+        (i2mid >= 0.26 || m2ring >= 0.26), 0.80);
+  add("ENTER", allUp && idxDir === "up" && thumbOutSide && thumbExt >= 0.45 &&
+        (i2mid >= 0.20 || m2ring >= 0.20), 0.90);
+  add("BACKSPACE", allUp && idxDir === "up" && thumbDown, 0.85);
 
-  // ── I: mão fechada, mínimo estendido ─────────────────────────────────────
-  // LGP-I: apenas mínimo (mindinho) estendido
-  if (idx.down && mid.down && ring.down && pink.up && !thumbOut) {
-    return { letter: "I", confidence: 0.88 };
-  }
+  // ── C (arco largo, dedos juntos) ─────────────────────────────────────────
+  add("C", idxC === "level" && midC === "level" && ringC === "level" && pinkC === "level" &&
+        thumbOutSide && t2idx >= 0.32 && i2mid < 0.22 && m2ring < 0.22, 0.83);
 
-  // ── J: indicador e mínimo estendidos (chifres), polegar dobrado ───────────
-  // LGP-J: indicador + mínimo para cima, médio + anelar dobrados
-  if (
-    idx.up && mid.down && ring.down && pink.up && !thumbOut
-  ) {
-    return { letter: "J", confidence: 0.82 };
-  }
+  // ── X (gancho só no indicador) ───────────────────────────────────────────
+  add("X", indexHook && midC === "down" && ringC === "down" && pinkC === "down" &&
+        !thumbOutSide, 0.80);
 
-  // ── K: todos os dedos esticados, espalmado, polegar para fora ─────────────
-  // LGP-K: mão aberta completamente, todos os dedos e polegar estendidos
-  if (allUp && thumbOut) {
-    return { letter: "K", confidence: 0.90 };
-  }
+  // ── P (mão solta, dedos em gancho largo, a apontar para baixo) ──────────
+  add("P", idxC === "level" && midC === "down" && ringC === "down" && pinkC === "down" &&
+        !thumbOutSide && thumbExt >= 0.15 && thumbExt < 0.45, 0.74);
 
-  // ── L: polegar e indicador formam L, outros dobrados ─────────────────────
-  // LGP-L: como ASL-L — polegar horizontal + indicador para cima
-  if (idx.up && mid.down && ring.down && pink.down && thumbOut && !thumbUpY) {
-    return { letter: "L", confidence: 0.88 };
-  }
+  // ── Y (polegar + mínimo esticados) ───────────────────────────────────────
+  add("Y", idxC === "down" && midC === "down" && ringC === "down" && pinkC === "up" &&
+        thumbOutSide && thumbExt >= 0.40, 0.88);
 
-  // ── M: três primeiros dedos dobrados sobre polegar, mínimo estendido ───────
-  // LGP-M: mínimo para cima, outros dobrados com polegar tucked
-  if (
-    idx.down && mid.down && ring.down && pink.up &&
-    thumbIn && t2idx < 0.45
-  ) {
-    return { letter: "M", confidence: 0.80 };
-  }
+  // ── Z (garra fechada e apertada, polegar não saliente) ───────────────────
+  add("Z", idxC === "level" && midC === "level" && ringC === "level" && pinkC === "level" &&
+        !thumbOutSide && t2idx < 0.30 && i2mid < 0.18 && m2ring < 0.18, 0.75);
 
-  // ── N: indicador e médio dobrados sobre o polegar ─────────────────────────
-  // LGP-N: como ASL-N — 2 dedos sobre o polegar, anelar+mínimo fechados
-  if (
-    !idx.up && !mid.up && ring.down && pink.down &&
-    thumbIn &&
-    t2idx < 0.38 && t2mid < 0.38 && t2ring > 0.42
-  ) {
-    return { letter: "N", confidence: 0.79 };
-  }
+  if (candidates.length === 0) return { letter: null, confidence: 0 };
 
-  // ── O: todos os dedos curvados a tocar o polegar (círculo/O) ─────────────
-  // LGP-O: igual ao ASL-O
-  if (
-    !idx.up && !mid.up && !ring.up && !pink.up &&
-    thumbOut &&
-    t2idx < 0.30 && t2mid < 0.36 && t2ring < 0.40
-  ) {
-    return { letter: "O", confidence: 0.84 };
-  }
-
-  // ── P: mão aberta, dedos juntos, polegar separado (variante LGP) ──────────
-  // LGP-P: palma espalmada virada para baixo / para a frente, polegar afastado
-  if (
-    allUp && thumbOut && thumbUpY &&
-    i2mid < 0.22
-  ) {
-    return { letter: "P", confidence: 0.80 };
-  }
-
-  // ── Q: polegar e indicador formam pinça apontada para baixo ──────────────
-  // LGP-Q: indicador dobrado a tocar polegar, restantes fechados
-  if (
-    !idx.up && mid.down && ring.down && pink.down &&
-    thumbDownY &&
-    t2idx < 0.40
-  ) {
-    return { letter: "Q", confidence: 0.78 };
-  }
-
-  // ── R: indicador e médio cruzados e estendidos ───────────────────────────
-  // LGP-R: V com dedos cruzados
-  if (
-    idx.up && mid.up && ring.down && pink.down &&
-    !thumbOut &&
-    i2mid < 0.14
-  ) {
-    return { letter: "R", confidence: 0.84 };
-  }
-
-  // ── S: punho fechado, polegar por cima dos dedos ──────────────────────────
-  // LGP-S: igual ao ASL-S
-  if (
-    allDown && !thumbIn && !thumbUpY &&
-    t2idx < 0.38 && t2mid < 0.42 &&
-    lm[4].y < lm[8].y
-  ) {
-    return { letter: "S", confidence: 0.84 };
-  }
-
-  // ── T: polegar entre indicador e médio dobrados ───────────────────────────
-  // LGP-T: como ASL-T — polegar sai entre indicador e médio com todos dobrados
-  if (
-    !idx.up && !mid.up && !ring.up && !pink.up &&
-    thumbUpY && nd(lm[4], lm[5], lm) < 0.45
-  ) {
-    return { letter: "T", confidence: 0.79 };
-  }
-
-  // ── U: indicador e médio juntos e estendidos, anelar e mínimo dobrados ────
-  // LGP-U: dois dedos para cima, juntos (como ASL-U)
-  if (
-    idx.up && mid.up && ring.down && pink.down &&
-    !thumbOut && i2mid < 0.20
-  ) {
-    return { letter: "U", confidence: 0.86 };
-  }
-
-  // ── V: indicador e médio estendidos e afastados (V da vitória) ────────────
-  // LGP-V: como ASL-V
-  if (
-    idx.up && mid.up && ring.down && pink.down &&
-    !thumbOut && i2mid >= 0.20
-  ) {
-    return { letter: "V", confidence: 0.87 };
-  }
-
-  // ── W: indicador, médio e anelar estendidos e afastados ───────────────────
-  // LGP-W: 3 dedos para cima separados (W tem 3 pontas como a letra)
-  if (
-    idx.up && mid.up && ring.up && pink.down &&
-    !thumbOut &&
-    i2mid >= 0.16 && m2ring >= 0.16
-  ) {
-    return { letter: "W", confidence: 0.85 };
-  }
-
-  // ── X: indicador curvado em gancho ────────────────────────────────────────
-  // LGP-X: indicador dobrado em gancho, outros fechados
-  if (
-    !idx.up && !idx.down &&
-    lm[7].y < lm[6].y &&
-    lm[8].y > lm[7].y + 0.01 &&
-    mid.down && ring.down && pink.down && !thumbOut
-  ) {
-    return { letter: "X", confidence: 0.78 };
-  }
-
-  // ── Y: mínimo e polegar estendidos (gesto "fixe"/hang loose) ─────────────
-  // LGP-Y: polegar + mínimo para fora, outros dobrados
-  if (idx.down && mid.down && ring.down && pink.up && thumbOut) {
-    return { letter: "Y", confidence: 0.87 };
-  }
-
-  // ── Z: mínimo estendido, mão ligeiramente rodada ──────────────────────────
-  // LGP-Z: mínimo para cima com movimento de Z (estático: mínimo isolado rodado)
-  if (
-    idx.down && mid.down && ring.down && pink.up &&
-    thumbIn
-  ) {
-    return { letter: "Z", confidence: 0.76 };
-  }
-
-  // ── ENTER: mão completamente aberta (todos os dedos + polegar) ────────────
-  if (allUp && thumbOut) {
-    return { letter: "ENTER", confidence: 0.92 };
-  }
-
-  // ── BACKSPACE: gesto de polegar para baixo ────────────────────────────────
-  if (allDown && thumbDownY && !thumbIn) {
-    return { letter: "BACKSPACE", confidence: 0.83 };
-  }
-
-  return { letter: null, confidence: 0 };
+  candidates.sort((a, b) => b.confidence - a.confidence);
+  return candidates[0];
 }
 
-// ─── Classe GestureRecognizer ─────────────────────────────────────────────────
+// ─── Classe GestureRecognizer ───────────────────────────────────────────────
 
 class GestureRecognizer {
   constructor() {

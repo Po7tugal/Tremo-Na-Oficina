@@ -1,89 +1,145 @@
 /* ============================================================
    reference.css — Sign Reference Panel
    ============================================================ */
-
 .sign-reference {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
-  height: 100%;
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-5);
+  box-shadow: var(--shadow-md), var(--shadow-inset);
 }
 
-/* ── A–Z grid ────────────────────────────────────────────── */
+/* ── Header ───────────────────────────────────────────────── */
+.sign-reference-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+.sign-reference-title {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+  margin: 0;
+}
+.sign-reference-subtitle {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── A–Z grid ─────────────────────────────────────────────── */
 .sign-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
   gap: 6px;
 }
-
-/* ── ENTER + BACKSPACE row ───────────────────────────────── */
+/* ── Special row (ENTER + BACKSPACE) ──────────────────────── */
 .sign-specials {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  gap: 8px;
+  margin-top: var(--sp-2);
 }
-
-/* ── Card base ───────────────────────────────────────────── */
+/* ── Card ─────────────────────────────────────────────────── */
 .sign-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 3px;
-  padding: 6px 4px 5px;
+  padding: 8px 4px;
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  cursor: default;
-  transition:
-    border-color 0.15s,
-    background   0.15s,
-    transform    0.15s,
-    box-shadow   0.15s;
+  cursor: pointer;
   overflow: hidden;
-  /* hint is hidden until hover/highlight */
+  position: relative;
+  box-shadow: var(--shadow-tile);
+  font: inherit;
+  transition:
+    border-color var(--transition),
+    background var(--transition),
+    transform var(--transition),
+    box-shadow var(--transition);
 }
-
 .sign-card:hover {
-  border-color: var(--color-text-muted);
-  transform: translateY(-1px);
+  border-color: var(--color-text-dim);
+  background: var(--color-surface-3);
+  transform: translateY(-2px);
   z-index: 1;
 }
-
-/* Highlighted — letter just detected */
-.sign-card--highlighted {
-  border-color: var(--color-accent) !important;
-  background: rgba(124, 106, 247, 0.18) !important;
-  transform: translateY(-2px) scale(1.08) !important;
-  box-shadow: 0 0 12px rgba(124, 106, 247, 0.45);
-  z-index: 2;
+.sign-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.sign-card:active {
+  transform: translateY(0) scale(0.97);
 }
 
-/* Special cards (ENTER / BACKSPACE) — wider */
+/* Highlighted (letter just detected) */
+.sign-card--highlighted {
+  border-color: var(--color-accent) !important;
+  background:
+    linear-gradient(135deg, rgba(139,124,255,0.30), rgba(139,124,255,0.12)) !important;
+  transform: translateY(-3px) scale(1.10) !important;
+  box-shadow:
+    0 8px 24px -6px var(--color-accent-glow),
+    0 0 0 1px var(--color-accent-glow);
+  z-index: 2;
+  animation: cardPulse 1.2s ease-in-out infinite;
+}
+@keyframes cardPulse {
+  0%, 100% { box-shadow: 0 8px 24px -6px var(--color-accent-glow), 0 0 0 1px var(--color-accent-glow); }
+  50%      { box-shadow: 0 12px 32px -4px var(--color-accent-glow), 0 0 0 3px var(--color-accent-glow); }
+}
+
+/* Selected (clicked by the user to inspect) */
+.sign-card--selected {
+  border-color: var(--color-text-dim);
+  background: var(--color-surface-3);
+}
+.sign-card--selected::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--color-accent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Special cards (ENTER / BACKSPACE) */
 .sign-card--special {
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border-style: dashed;
+  border-color: var(--color-border);
 }
 
-/* ── Big letter ──────────────────────────────────────────── */
+/* ── Letter ───────────────────────────────────────────────── */
 .sign-card-letter {
   font-family: var(--font-mono);
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
   color: var(--color-text);
   line-height: 1;
-  transition: color 0.15s;
+  transition: color var(--transition);
 }
-
 .sign-card--highlighted .sign-card-letter {
-  color: var(--color-accent);
+  color: #fff;
+  text-shadow: 0 0 12px var(--color-accent-glow);
 }
 
-/* ── Label (for specials) ────────────────────────────────── */
+/* ── Label (specials) ─────────────────────────────────────── */
 .sign-card-label {
   font-family: var(--font-mono);
   font-size: 0.7rem;
@@ -91,30 +147,20 @@
   color: var(--color-text-muted);
   line-height: 1;
   white-space: nowrap;
+  letter-spacing: 0.04em;
 }
+.sign-card--highlighted .sign-card-label { color: var(--color-accent); }
+.sign-card:not(.sign-card--special) .sign-card-label { display: none; }
 
-.sign-card--highlighted .sign-card-label {
-  color: var(--color-accent);
-}
-
-/* Hide label on regular cards (letter is the label) */
-.sign-card:not(.sign-card--special) .sign-card-label {
-  display: none;
-}
-
-/* ── Emoji icon (specials) ───────────────────────────────── */
+/* ── Emoji icon ───────────────────────────────────────────── */
 .sign-card-icon {
   font-size: 1.6rem;
   line-height: 1;
   flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 
-/* ── Hint text ───────────────────────────────────────────── */
-/*
-  Hidden by default on small cards.
-  Shown on hover and when highlighted.
-  On special (wide) cards always visible.
-*/
+/* ── Hint text ────────────────────────────────────────────── */
 .sign-card-hint {
   font-size: 0.55rem;
   color: var(--color-text-muted);
@@ -122,18 +168,56 @@
   line-height: 1.3;
   display: none;
 }
-
 .sign-card:hover .sign-card-hint,
-.sign-card--highlighted .sign-card-hint {
-  display: block;
-}
-
+.sign-card--highlighted .sign-card-hint { display: block; }
 .sign-card--special .sign-card-hint {
   display: block;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: 0.74rem;
+}
+.sign-card--highlighted .sign-card-hint { color: rgba(255,255,255,0.85); }
+
+/* ── Tooltip (selected letter detail) ────────────────────── */
+.sign-tooltip {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 10px 14px;
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  animation: tooltipIn 0.18s ease-out;
+}
+@keyframes tooltipIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sign-tooltip-letter {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+.sign-tooltip-desc {
+  font-size: 0.8rem;
+  color: var(--color-text);
+  line-height: 1.4;
 }
 
-.sign-card--highlighted .sign-card-hint {
-  color: rgba(124, 106, 247, 0.85);
+/* ── Credit ───────────────────────────────────────────────── */
+.sign-reference-credit {
+  font-size: 0.62rem;
+  color: var(--color-text-dim, var(--color-text-muted));
+  text-align: center;
+  margin: 0;
+  opacity: 0.7;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 760px) {
+  .sign-grid {
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  }
+  .sign-card-letter { font-size: 1.05rem; }
 }

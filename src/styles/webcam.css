@@ -1,65 +1,63 @@
 /* ============================================================
-   webcam.css — Webcam & Detection UI Styles
+   webcam.css — Webcam & Detection UI
    ============================================================ */
-
-/* ── Section Wrapper ──────────────────────────────────────── */
 .webcam-section {
-  background: var(--color-surface);
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: var(--sp-5);
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
+  box-shadow: var(--shadow-md), var(--shadow-inset);
 }
-
 /* ── Video Wrapper ────────────────────────────────────────── */
-/*
-   Key rules:
-   - position: relative so absolute children (canvas, overlays) are contained
-   - overflow: hidden clips the canvas/video to the rounded corners
-   - aspect-ratio keeps it stable before the video loads
-*/
 .video-wrapper {
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: #000;
-  border: 2px solid var(--color-border);
+  border: 1px solid var(--color-border);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,0.04),
+    0 10px 30px -12px rgba(0,0,0,0.7);
 }
-
-/* ── Video Feed ───────────────────────────────────────────── */
+/* Scanline accent (subtle, game-y) */
+.video-wrapper::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.02) 0 1px,
+      transparent 1px 3px);
+  mix-blend-mode: overlay;
+  z-index: 5;
+}
+/* Video */
 .video-feed {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Mirror so hand movements feel natural */
   transform: scaleX(-1);
   display: block;
 }
-
-/* ── Hand Landmark Canvas ─────────────────────────────────── */
-/*
-   Must be:
-   - position: absolute so it overlays the video exactly
-   - same inset/size as the video
-   - pointer-events: none so it never blocks video interaction
-   - NO transform: the JS already mirrors the X coordinates
-*/
+/* Landmark canvas */
 .hand-overlay {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   pointer-events: none;
-  /* Do NOT mirror the canvas — JS mirrors X coords instead */
+  z-index: 6;
 }
-
-/* ── Placeholder (camera off) ─────────────────────────────── */
+/* Placeholder */
 .video-placeholder {
   position: absolute;
   inset: 0;
@@ -67,171 +65,157 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--color-surface-2);
   gap: var(--sp-3);
+  background:
+    radial-gradient(circle at center, var(--color-surface-3), var(--color-surface) 70%);
 }
-
 .placeholder-icon {
-  font-size: 3rem;
-  opacity: 0.5;
+  font-size: 3.5rem;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 18px var(--color-accent-glow));
+  animation: pulseSoft 2.2s ease-in-out infinite;
 }
-
 .placeholder-text {
   color: var(--color-text-muted);
   font-size: 0.9rem;
+  letter-spacing: 0.04em;
 }
-
-/* ── Detection Overlay (letter + progress) ────────────────── */
+@keyframes pulseSoft {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.06); }
+}
+/* ── Detection Overlay ────────────────────────────────────── */
 .detection-overlay {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: var(--sp-3);
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
+  bottom: 0; left: 0; right: 0;
+  padding: var(--sp-4) var(--sp-4) var(--sp-3);
+  background: linear-gradient(to top,
+    rgba(0,0,0,0.92) 0%,
+    rgba(0,0,0,0.55) 60%,
+    transparent 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--sp-2);
-  /* Above canvas */
   z-index: 10;
 }
-
-/* Big letter */
 .detected-letter {
   font-family: var(--font-mono);
-  font-size: 3.5rem;
+  font-size: clamp(2.5rem, 6vw, 3.8rem);
   font-weight: 700;
   color: #fff;
-  text-shadow: 0 0 20px var(--color-accent);
+  text-shadow:
+    0 0 20px var(--color-accent-glow),
+    0 0 40px var(--color-accent-glow);
   line-height: 1;
   letter-spacing: -0.02em;
+  animation: letterPop 0.25s var(--ease-out);
 }
-
-/* Hold progress bar */
+@keyframes letterPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
 .hold-progress-bar {
-  width: 80%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.2);
+  width: 82%;
+  height: 8px;
+  background: rgba(255,255,255,0.12);
   border-radius: 999px;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
 }
-
 .hold-progress-fill {
   height: 100%;
-  background: var(--color-accent);
+  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover));
   border-radius: 999px;
+  box-shadow: 0 0 12px var(--color-accent-glow);
   transition: width 0.08s linear;
 }
-
 .confidence-label {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.7);
   font-family: var(--font-mono);
+  letter-spacing: 0.06em;
 }
-
 /* ── Camera Controls ──────────────────────────────────────── */
 .camera-controls {
   display: flex;
   gap: var(--sp-3);
 }
-
-.camera-controls .btn {
-  flex: 1;
-  justify-content: center;
-}
-
-/* ── Error Banner ─────────────────────────────────────────── */
-.error-banner {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  border-radius: var(--radius-md);
-  padding: var(--sp-3) var(--sp-4);
-  font-size: 0.85rem;
-  color: #fca5a5;
-}
-
-/* ── Gesture Test Buttons ─────────────────────────────────── */
+.camera-controls .btn { flex: 1; }
+/* ── Gesture test buttons ─────────────────────────────────── */
 .gesture-actions {
   display: flex;
   gap: var(--sp-2);
   flex-wrap: wrap;
 }
-
 .gesture-actions button {
   padding: var(--sp-2) var(--sp-3);
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-muted);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  transition: all var(--transition);
 }
-
 .gesture-actions button:hover {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -4px var(--color-accent-glow);
 }
-
-/* ── Manual Mini Keyboard ─────────────────────────────────── */
+/* ── Manual mini keyboard ─────────────────────────────────── */
 .manual-input-section {
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-soft);
   padding-top: var(--sp-4);
 }
-
 .manual-input-label {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   color: var(--color-text-muted);
   margin-bottom: var(--sp-2);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
 }
-
 .mini-keyboard {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--sp-1);
+  gap: 4px;
 }
-
 .mini-key {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
   background: var(--color-surface-2);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   color: var(--color-text);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  transition: all var(--transition);
+  box-shadow: var(--shadow-tile);
 }
-
 .mini-key:hover:not(:disabled) {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: #fff;
+  transform: translateY(-1px);
 }
-
-.mini-key:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
+.mini-key:active:not(:disabled) { transform: translateY(1px); }
+.mini-key:disabled { opacity: 0.35; cursor: not-allowed; }
 /* ── Mock Notice ──────────────────────────────────────────── */
 .mock-notice {
-  background: rgba(124, 106, 247, 0.1);
-  border: 1px solid var(--color-accent);
+  background:
+    linear-gradient(135deg, rgba(139,124,255,0.10), rgba(139,124,255,0.04));
+  border: 1px solid rgba(139,124,255,0.35);
   border-radius: var(--radius-md);
   padding: var(--sp-3) var(--sp-4);
   font-size: 0.8rem;
   color: var(--color-text-muted);
-  line-height: 1.6;
+  line-height: 1.55;
+  backdrop-filter: blur(4px);
 }
-
-.mock-notice strong {
-  color: var(--color-accent);
-}
+.mock-notice strong { color: var(--color-accent); }
